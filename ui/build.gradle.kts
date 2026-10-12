@@ -5,6 +5,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val pkg: String = providers.gradleProperty("amneziawgPackageName").get()
 val myvpnBuild: String = providers.gradleProperty("myvpnBuild").orElse("b1").get()
+val amneziawgVersionName: String = providers.gradleProperty("amneziawgVersionName").get()
 
 plugins {
     alias(libs.plugins.android.application)
@@ -22,10 +23,11 @@ android {
     defaultConfig {
         applicationId = "ru.wooh.wh78"
         targetSdk = 36
-        versionCode = providers.gradleProperty("amneziawgVersionCode").get().toInt()
-        versionName = providers.gradleProperty("amneziawgVersionName").get()
+        versionCode = providers.gradleProperty("wh78VersionCode").get().toInt()
+        versionName = myvpnBuild
         buildConfigField("int", "MIN_SDK_VERSION", minSdk.toString())
         buildConfigField("String", "MYVPN_BUILD", "\"$myvpnBuild\"")
+        buildConfigField("String", "AMNEZIAWG_VERSION_NAME", "\"$amneziawgVersionName\"")
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

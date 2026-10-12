@@ -280,7 +280,7 @@ class Wh78SettingsDialog(
             .setTitle("О WH78")
             .setMessage(
                 "WH78 ${BuildConfig.MYVPN_BUILD}\n\n" +
-                    "AmneziaWG ${BuildConfig.VERSION_NAME}\n" +
+                    "AmneziaWG ${BuildConfig.AMNEZIAWG_VERSION_NAME}\n" +
                     "VPN client без регистрации.\n\n" +
                     "GitHub\nhttps://github.com/WoOh78/WH78"
             )

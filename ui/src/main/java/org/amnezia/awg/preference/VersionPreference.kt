@@ -27,7 +27,7 @@ class VersionPreference(context: Context, attrs: AttributeSet?) : Preference(con
 
     override fun getSummary() = versionSummary
 
-    override fun getTitle() = context.getString(R.string.version_title, BuildConfig.VERSION_NAME)
+    override fun getTitle() = context.getString(R.string.version_title, BuildConfig.AMNEZIAWG_VERSION_NAME)
 
     override fun onClick() {
         val intent = Intent(Intent.ACTION_VIEW)
