@@ -1,0 +1,672 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/dashboard_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:fitsSystemWindows="true">
+
+    <FrameLayout
+        android:id="@+id/page_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:id="@+id/dashboard_page"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:paddingStart="20dp"
+                android:paddingTop="10dp"
+                android:paddingEnd="20dp"
+                android:paddingBottom="8dp">
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:baselineAligned="true"
+                        android:orientation="horizontal">
+                        <TextView
+                            android:id="@+id/brand_title"
+                            android:fontFamily="sans-serif"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="WoOh78"
+                            android:textSize="24sp"
+                            android:textStyle="bold" />
+                        <TextView
+                            android:id="@+id/brand_build"
+                            android:fontFamily="sans-serif"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:layout_marginBottom="2dp"
+                            android:text="b1"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                    <TextView
+                        android:id="@+id/brand_subtitle"
+                        android:fontFamily="sans-serif"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:text="AmneziaWG private client"
+                        android:textSize="10sp"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
+                </LinearLayout>
+                <TextView
+                    android:id="@+id/feedback_button"
+                        android:fontFamily="sans-serif"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:gravity="center"
+                    android:drawableStart="@drawable/ic_feedback"
+                    android:drawablePadding="5dp"
+                    android:paddingStart="6dp"
+                    android:paddingEnd="8dp"
+                    android:text="Обратная связь"
+                    android:textSize="12sp"
+                    android:clickable="true"
+                    android:focusable="true" />
+                <TextView
+                    android:id="@+id/share_button"
+                        android:fontFamily="sans-serif"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:gravity="center"
+                    android:drawableStart="@drawable/ic_share"
+                    android:drawablePadding="5dp"
+                    android:paddingStart="6dp"
+                    android:paddingEnd="0dp"
+                    android:text="Поделиться"
+                    android:textSize="12sp"
+                    android:clickable="true"
+                    android:focusable="true" />
+            </LinearLayout>
+
+            <androidx.core.widget.NestedScrollView
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:fillViewport="true"
+                android:clipToPadding="false">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="24dp">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/server_card"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        app:cardCornerRadius="26dp"
+                        app:cardElevation="0dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:paddingStart="20dp"
+                            android:paddingTop="11dp"
+                            android:paddingEnd="20dp"
+                            android:paddingBottom="11dp">
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical">
+                                <TextView
+                                    android:id="@+id/status_dot"
+                        android:fontFamily="sans-serif"
+                                    android:layout_width="34dp"
+                                    android:layout_height="34dp"
+                                    android:gravity="center"
+                                    android:text="●"
+                                    android:textSize="21sp" />
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+                                    <TextView
+                                        android:id="@+id/status_title"
+                        android:fontFamily="sans-serif"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="VPN отключён"
+                                        android:textSize="19sp"
+                                        android:textStyle="bold" />
+                                    <TextView
+                                        android:id="@+id/status_subtitle"
+                        android:fontFamily="sans-serif"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="3dp"
+                                        android:text="Интернет работает напрямую"
+                                        android:textSize="12sp" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:orientation="vertical">
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal">
+                                    <TextView
+                                        android:id="@+id/profile_label"
+                                        android:fontFamily="sans-serif"
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="Профиль"
+                                        android:textSize="11sp" />
+                                    <TextView
+                                        android:id="@+id/active_time_label"
+                                        android:fontFamily="sans-serif"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Активное время"
+                                        android:textSize="11sp" />
+                                </LinearLayout>
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal">
+                                    <LinearLayout
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:gravity="center_vertical"
+                                        android:orientation="horizontal">
+                                        <TextView
+                                            android:id="@+id/dashboard_title"
+                                            android:fontFamily="sans-serif"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:background="@drawable/profile_badge"
+                                            android:paddingStart="7dp"
+                                            android:paddingTop="2dp"
+                                            android:paddingEnd="7dp"
+                                            android:paddingBottom="2dp"
+                                            android:text="—"
+                                            android:textSize="17sp"
+                                            android:textStyle="bold" />
+                                        <TextView
+                                            android:id="@+id/profile_expiry"
+                                            android:fontFamily="sans-serif"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginStart="6dp"
+                                            android:background="@drawable/profile_badge"
+                                            android:paddingStart="7dp"
+                                            android:paddingTop="2dp"
+                                            android:paddingEnd="7dp"
+                                            android:paddingBottom="2dp"
+                                            android:text="12 дн."
+                                            android:textSize="17sp"
+                                            android:textStyle="bold"
+                                            android:visibility="gone" />
+                                    </LinearLayout>
+                                    <TextView
+                                        android:id="@+id/active_time_main"
+                                        android:fontFamily="sans-serif"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="—"
+                                        android:textSize="18sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:orientation="vertical">
+                                <TextView
+                                    android:id="@+id/server_country"
+                        android:fontFamily="sans-serif"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Точка выхода: —"
+                                    android:textSize="14sp" />
+                                <TextView
+                                    android:id="@+id/server_ping"
+                        android:fontFamily="sans-serif"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="3dp"
+                                    android:text="Пинг до сервера: —"
+                                    android:textSize="11sp" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:id="@+id/profile_expiry_bar"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:orientation="vertical"
+                                android:visibility="gone">
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal">
+                                    <TextView
+                                        android:id="@+id/profile_expiry_days"
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:fontFamily="sans-serif"
+                                        android:text="Без срока"
+                                        android:textSize="11sp"
+                                        android:textStyle="bold" />
+                                    <TextView
+                                        android:id="@+id/profile_expiry_date"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:fontFamily="sans-serif"
+                                        android:text="∞"
+                                        android:textSize="11sp" />
+                                </LinearLayout>
+                                <FrameLayout
+                                    android:id="@+id/profile_expiry_track"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="6dp"
+                                    android:layout_marginTop="4dp">
+                                    <View
+                                        android:id="@+id/profile_expiry_fill"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="6dp" />
+                                </FrameLayout>
+                            </LinearLayout>
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/connect_button"
+                        android:fontFamily="sans-serif"
+                                style="@style/Widget.Material3.Button"
+                                android:layout_width="match_parent"
+                                android:layout_height="58dp"
+                                android:layout_marginTop="8dp"
+                                android:text="ПОДКЛЮЧИТЬ"
+                                android:textStyle="bold"
+                                app:cornerRadius="24dp" />
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/add_profile_button"
+                                style="@style/Widget.Material3.Button.TextButton"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="Добавить профиль"
+                                android:visibility="gone" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/connection_card"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:visibility="gone" />
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/traffic_card"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        app:cardCornerRadius="22dp"
+                        app:cardElevation="0dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="18dp">
+                            <TextView
+                                android:id="@+id/section_traffic"
+                        android:fontFamily="sans-serif"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:drawableStart="@drawable/ic_traffic"
+                                android:drawablePadding="7dp"
+                                android:gravity="center_vertical"
+                                android:text="Трафик"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="14dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:gravity="center_horizontal"
+                                    android:orientation="vertical">
+                                    <TextView
+                                        android:id="@+id/rx_label"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:drawableStart="@drawable/ic_download"
+                                        android:drawablePadding="5dp"
+                                        android:gravity="center_vertical"
+                                        android:text="Получено"
+                                        android:textSize="11sp" />
+                                    <TextView
+                                        android:id="@+id/rx_value"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="4dp"
+                                        android:text="—"
+                                        android:textSize="17sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+                                <View
+                                    android:layout_width="1dp"
+                                    android:layout_height="48dp"
+                                    android:alpha="0.12"
+                                    android:background="?android:attr/textColorPrimary" />
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:gravity="center_horizontal"
+                                    android:orientation="vertical">
+                                    <TextView
+                                        android:id="@+id/tx_label"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:drawableStart="@drawable/ic_upload"
+                                        android:drawablePadding="5dp"
+                                        android:gravity="center_vertical"
+                                        android:text="Отправлено"
+                                        android:textSize="11sp" />
+                                    <TextView
+                                        android:id="@+id/tx_value"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="4dp"
+                                        android:text="—"
+                                        android:textSize="17sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+                                <View
+                                    android:layout_width="1dp"
+                                    android:layout_height="48dp"
+                                    android:alpha="0.12"
+                                    android:background="?android:attr/textColorPrimary" />
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:gravity="center_horizontal"
+                                    android:orientation="vertical">
+                                    <TextView
+                                        android:id="@+id/total_label"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:drawableStart="@drawable/ic_total"
+                                        android:drawablePadding="5dp"
+                                        android:gravity="center_vertical"
+                                        android:text="Всего"
+                                        android:textSize="11sp" />
+                                    <TextView
+                                        android:id="@+id/total_value"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="4dp"
+                                        android:text="—"
+                                        android:textSize="17sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+                            </LinearLayout>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/expiry_card"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/section_quick_actions"
+                        android:fontFamily="sans-serif"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginTop="6dp"
+                        android:layout_marginBottom="6dp"
+                        android:drawableStart="@drawable/ic_quick_actions"
+                        android:drawablePadding="7dp"
+                        android:gravity="center_vertical"
+                        android:text="Проверка сервисов"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:id="@+id/quick_services_row1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/quick_youtube_card"
+                            android:layout_width="0dp"
+                            android:layout_height="94dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="2dp"
+                             android:layout_marginEnd="2dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            app:cardCornerRadius="20dp"
+                            app:cardElevation="0dp">
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:padding="3dp">
+                                <TextView
+                                    android:id="@+id/youtube_button"
+                        android:fontFamily="sans-serif"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:drawableTop="@drawable/ic_youtube"
+                                    android:drawablePadding="3dp"
+                                    android:text="YouTube"
+                                    android:textSize="10sp"
+                                    android:textStyle="bold" />
+                                <TextView
+                                    android:id="@+id/youtube_ping"
+                        android:fontFamily="sans-serif"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:includeFontPadding="false"
+                                    android:maxLines="1"
+                                    android:text="—"
+                                    android:textSize="9sp" />
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/quick_instagram_card"
+                            android:layout_width="0dp"
+                            android:layout_height="94dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="2dp"
+                             android:layout_marginEnd="2dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            app:cardCornerRadius="20dp"
+                            app:cardElevation="0dp">
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:padding="3dp">
+                                <TextView
+                                    android:id="@+id/instagram_button"
+                        android:fontFamily="sans-serif"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:drawableTop="@drawable/ic_instagram"
+                                    android:drawablePadding="3dp"
+                                    android:text="Instagram"
+                                    android:textSize="10sp"
+                                    android:textStyle="bold" />
+                                <TextView
+                                    android:id="@+id/instagram_ping"
+                        android:fontFamily="sans-serif"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:includeFontPadding="false"
+                                    android:maxLines="1"
+                                    android:text="—"
+                                    android:textSize="9sp" />
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/quick_whatsapp_card"
+                            android:layout_width="0dp"
+                            android:layout_height="94dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="2dp"
+                             android:layout_marginEnd="2dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            app:cardCornerRadius="20dp"
+                            app:cardElevation="0dp">
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:padding="3dp">
+                                <TextView
+                                    android:id="@+id/whatsapp_button"
+                        android:fontFamily="sans-serif"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:drawableTop="@drawable/ic_whatsapp"
+                                    android:drawablePadding="3dp"
+                                    android:text="WhatsApp"
+                                    android:textSize="10sp"
+                                    android:textStyle="bold" />
+                                <TextView
+                                    android:id="@+id/whatsapp_ping"
+                        android:fontFamily="sans-serif"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:includeFontPadding="false"
+                                    android:maxLines="1"
+                                    android:text="—"
+                                    android:textSize="9sp" />
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/quick_telegram_card"
+                            android:layout_width="0dp"
+                            android:layout_height="94dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="2dp"
+                             android:layout_marginEnd="2dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            app:cardCornerRadius="20dp"
+                            app:cardElevation="0dp">
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:padding="3dp">
+                                <TextView
+                                    android:id="@+id/telegram_button"
+                        android:fontFamily="sans-serif"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:drawableTop="@drawable/ic_telegram"
+                                    android:drawablePadding="3dp"
+                                    android:text="Telegram"
+                                    android:textSize="10sp"
+                                    android:textStyle="bold" />
+                                <TextView
+                                    android:id="@+id/telegram_ping"
+                        android:fontFamily="sans-serif"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:includeFontPadding="false"
+                                    android:maxLines="1"
+                                    android:text="—"
+                                    android:textSize="9sp" />
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.core.widget.NestedScrollView>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/tunnel_page"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:visibility="gone">
+            <TextView
+                android:id="@+id/tunnel_page_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="20dp"
+                android:paddingTop="18dp"
+                android:paddingEnd="20dp"
+                android:paddingBottom="12dp"
+                android:text="Список туннелей"
+                android:textSize="25sp"
+                android:textStyle="normal" />
+            <FrameLayout
+                android:id="@+id/tunnel_list_container"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:elevation="8dp"
+        app:itemHorizontalTranslationEnabled="false"
+        app:labelVisibilityMode="labeled"
+        app:itemIconSize="24dp"
+        app:menu="@menu/dashboard_bottom_nav" />
+</LinearLayout>

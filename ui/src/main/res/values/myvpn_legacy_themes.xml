@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="MyVpnLegacyPremiumDarkTheme" parent="AppTheme">
+        <item name="colorPrimary">#4DE2A0</item>
+        <item name="colorOnPrimary">#071F16</item>
+        <item name="colorPrimaryContainer">#1C2328</item>
+        <item name="colorOnPrimaryContainer">#F4F8F6</item>
+        <item name="colorSecondary">#9CABA5</item>
+        <item name="colorOnSecondary">#0A0D10</item>
+        <item name="colorSecondaryContainer">#1C2328</item>
+        <item name="colorOnSecondaryContainer">#F4F8F6</item>
+        <item name="colorTertiary">#4DE2A0</item>
+        <item name="colorOnTertiary">#071F16</item>
+        <item name="colorTertiaryContainer">#1C2328</item>
+        <item name="colorOnTertiaryContainer">#F4F8F6</item>
+        <item name="colorError">#FF5C5C</item>
+        <item name="colorOnError">#280000</item>
+        <item name="android:colorBackground">#0A0D10</item>
+        <item name="colorOnBackground">#F4F8F6</item>
+        <item name="colorSurface">#14191D</item>
+        <item name="colorOnSurface">#F4F8F6</item>
+        <item name="colorSurfaceVariant">#1C2328</item>
+        <item name="colorOnSurfaceVariant">#9CABA5</item>
+        <item name="colorOutline">#344640</item>
+        <item name="colorControlNormal">#F4F8F6</item>
+        <item name="colorControlActivated">#4DE2A0</item>
+        <item name="android:statusBarColor">#0A0D10</item>
+        <item name="android:navigationBarColor">#14191D</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+    <style name="MyVpnLegacyLightTheme" parent="AppTheme">
+        <item name="colorPrimary">#188E5B</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#ECF0F3</item>
+        <item name="colorOnPrimaryContainer">#151C21</item>
+        <item name="colorSecondary">#606D75</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">#ECF0F3</item>
+        <item name="colorOnSecondaryContainer">#151C21</item>
+        <item name="colorTertiary">#188E5B</item>
+        <item name="colorOnTertiary">#FFFFFF</item>
+        <item name="colorTertiaryContainer">#ECF0F3</item>
+        <item name="colorOnTertiaryContainer">#151C21</item>
+        <item name="colorError">#D64141</item>
+        <item name="colorOnError">#FFFFFF</item>
+        <item name="android:colorBackground">#F6F8F9</item>
+        <item name="colorOnBackground">#151C21</item>
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorOnSurface">#151C21</item>
+        <item name="colorSurfaceVariant">#ECF0F3</item>
+        <item name="colorOnSurfaceVariant">#606D75</item>
+        <item name="colorOutline">#CFD6DA</item>
+        <item name="colorControlNormal">#151C21</item>
+        <item name="colorControlActivated">#188E5B</item>
+        <item name="android:statusBarColor">#F6F8F9</item>
+        <item name="android:navigationBarColor">#FFFFFF</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+
+    <style name="MyVpnLegacyBlueTheme" parent="AppTheme">
+        <item name="colorPrimary">#59ABFF</item>
+        <item name="colorOnPrimary">#071C31</item>
+        <item name="colorPrimaryContainer">#152740</item>
+        <item name="colorOnPrimaryContainer">#EFF6FF</item>
+        <item name="colorSecondary">#97AECB</item>
+        <item name="colorOnSecondary">#080F1C</item>
+        <item name="colorSecondaryContainer">#152740</item>
+        <item name="colorOnSecondaryContainer">#EFF6FF</item>
+        <item name="colorTertiary">#59ABFF</item>
+        <item name="colorOnTertiary">#071C31</item>
+        <item name="colorTertiaryContainer">#152740</item>
+        <item name="colorOnTertiaryContainer">#EFF6FF</item>
+        <item name="colorError">#FF676E</item>
+        <item name="colorOnError">#2C0004</item>
+        <item name="android:colorBackground">#080F1C</item>
+        <item name="colorOnBackground">#EFF6FF</item>
+        <item name="colorSurface">#0F1B2F</item>
+        <item name="colorOnSurface">#EFF6FF</item>
+        <item name="colorSurfaceVariant">#152740</item>
+        <item name="colorOnSurfaceVariant">#97AECB</item>
+        <item name="colorOutline">#334E6F</item>
+        <item name="colorControlNormal">#EFF6FF</item>
+        <item name="colorControlActivated">#59ABFF</item>
+        <item name="android:statusBarColor">#080F1C</item>
+        <item name="android:navigationBarColor">#0F1B2F</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+    <style name="MyVpnLegacyCyberpunkTheme" parent="AppTheme">
+        <item name="colorPrimary">#FF42C7</item>
+        <item name="colorOnPrimary">#300923</item>
+        <item name="colorPrimaryContainer">#2A1235</item>
+        <item name="colorOnPrimaryContainer">#F9EFFF</item>
+        <item name="colorSecondary">#B192BF</item>
+        <item name="colorOnSecondary">#0D0712</item>
+        <item name="colorSecondaryContainer">#2A1235</item>
+        <item name="colorOnSecondaryContainer">#F9EFFF</item>
+        <item name="colorTertiary">#FF42C7</item>
+        <item name="colorOnTertiary">#300923</item>
+        <item name="colorTertiaryContainer">#2A1235</item>
+        <item name="colorOnTertiaryContainer">#F9EFFF</item>
+        <item name="colorError">#FF547D</item>
+        <item name="colorOnError">#2E000F</item>
+        <item name="android:colorBackground">#0D0712</item>
+        <item name="colorOnBackground">#F9EFFF</item>
+        <item name="colorSurface">#1C0D26</item>
+        <item name="colorOnSurface">#F9EFFF</item>
+        <item name="colorSurfaceVariant">#2A1235</item>
+        <item name="colorOnSurfaceVariant">#B192BF</item>
+        <item name="colorOutline">#5A2C62</item>
+        <item name="colorControlNormal">#F9EFFF</item>
+        <item name="colorControlActivated">#FF42C7</item>
+        <item name="android:statusBarColor">#0D0712</item>
+        <item name="android:navigationBarColor">#1C0D26</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+</resources>

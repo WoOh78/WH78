@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="dashboard_theme_entries">
+        <item>Premium Dark</item>
+        <item>Светлая</item>
+        <item>Синяя</item>
+        <item>Cyberpunk</item>
+    </string-array>
+    <string-array name="dashboard_theme_values">
+        <item>premium_dark</item>
+        <item>light</item>
+        <item>blue</item>
+        <item>cyberpunk</item>
+    </string-array>
+</resources>
