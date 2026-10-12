@@ -24,7 +24,7 @@
     <permission
         android:name="${applicationId}.permission.CONTROL_TUNNELS"
         android:description="@string/permission_description"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/ic_launcher_b18"
         android:label="@string/permission_label"
         android:protectionLevel="dangerous" />
 
@@ -33,9 +33,9 @@
         android:allowBackup="false"
         android:banner="@drawable/banner"
         android:enableOnBackInvokedCallback="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/ic_launcher_b18"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@mipmap/ic_launcher_b18_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
@@ -68,7 +68,7 @@
             android:name="org.amnezia.awg.activity.TvMainActivity"
             android:banner="@drawable/banner"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher"
+            android:icon="@mipmap/ic_launcher_b18"
             android:theme="@style/TvTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -135,7 +135,7 @@
         <service
             android:name="org.amnezia.awg.QuickTileService"
             android:exported="true"
-            android:icon="@drawable/wh78_quick_tile"
+            android:icon="@drawable/wh78_qs_mono_light_b18"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
