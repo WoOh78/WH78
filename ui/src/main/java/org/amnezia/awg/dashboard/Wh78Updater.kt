@@ -33,7 +33,15 @@ object Wh78Updater {
                 }
                 val current = parseBuildNumber(BuildConfig.MYVPN_BUILD)
                 val latestNumber = parseBuildNumber(latest.tag)
-                if (latestNumber != null && current != null && latestNumber <= current) {
+                if (current == null) {
+                    onMessage("Не удалось определить текущую версию: ${BuildConfig.MYVPN_BUILD}")
+                    return@launch
+                }
+                if (latestNumber == null) {
+                    onMessage("Некорректный тег релиза GitHub: ${latest.tag}. Ожидается формат b15")
+                    return@launch
+                }
+                if (latestNumber <= current) {
                     onMessage("Установлена последняя версия")
                     return@launch
                 }
@@ -113,6 +121,9 @@ object Wh78Updater {
         val installer = context.packageManager.packageInstaller
         val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
         params.setAppPackageName(context.packageName)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            params.setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_REQUIRED)
+        }
         val sessionId = installer.createSession(params)
         val session = installer.openSession(sessionId)
         try {
@@ -140,7 +151,9 @@ class Wh78InstallReceiver : BroadcastReceiver() {
         val text = when (status) {
             PackageInstaller.STATUS_SUCCESS -> "WH78 обновлён"
             PackageInstaller.STATUS_PENDING_USER_ACTION -> "Android ожидает подтверждение установки"
-            else -> "Не удалось установить обновление${message?.let { ": $it" } ?: ""}"
+            PackageInstaller.STATUS_FAILURE_BLOCKED -> "Установка заблокирована. Разрешите WH78 устанавливать неизвестные приложения."
+            PackageInstaller.STATUS_FAILURE_INCOMPATIBLE -> "APK несовместим с установленным WH78${message?.let { ": $it" } ?: ""}"
+            else -> "Не удалось установить обновление${message?.let { ": $it" } ?: " (код $status)"}"
         }
         Toast.makeText(context, text, Toast.LENGTH_LONG).show()
         if (status == PackageInstaller.STATUS_PENDING_USER_ACTION) {
