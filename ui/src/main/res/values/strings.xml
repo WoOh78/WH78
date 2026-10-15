@@ -318,8 +318,8 @@
     <string name="dashboard_history">История трафика</string>
     <string name="dashboard_app_settings">Настройки приложения</string>
     <string name="dashboard_feedback_unavailable">Не удалось открыть Telegram</string>
-    <string name="dashboard_share_title">Поделиться MyVPN</string>
-    <string name="dashboard_share_text">MyVPN — частный Android-клиент на базе AmneziaWG.</string>
+    <string name="dashboard_share_title">Поделиться WH78</string>
+    <string name="dashboard_share_text">WH78 — клиент для защищённого и свободного интернета.</string>
     <string name="dashboard_vpn_error">Ошибка VPN: %s</string>
     <string name="dashboard_tunneling_saved">Настройки туннелирования сохранены</string>
     <string name="dashboard_tunneling_error">Не удалось сохранить туннелирование: %s</string>

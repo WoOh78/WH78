@@ -112,6 +112,11 @@
             android:name="org.amnezia.awg.dashboard.Wh78InstallReceiver"
             android:exported="false" />
 
+        <!-- Monochrome icon for the system-managed VPN UI; Quick Settings tile has its own icon. -->
+        <service
+            android:name="org.amnezia.awg.backend.GoBackend$VpnService"
+            android:icon="@drawable/wh78_qs_mono_light_b18" />
+
         <receiver
             android:name="org.amnezia.awg.BootShutdownReceiver"
             android:exported="true">

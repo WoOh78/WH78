@@ -30,10 +30,10 @@ import org.amnezia.awg.viewmodel.ConfigProxy
 
 class Wh78SettingsDialog(
     private val activity: DashboardActivity,
-    private val palette: Palette,
+    private var palette: Palette,
     private val getActiveTunnel: () -> ObservableTunnel?,
     private val onSplitTunneling: (ObservableTunnel) -> Unit,
-    private val onThemeChanged: (AppTheme) -> Unit,
+    private val onThemeChanged: suspend (AppTheme) -> Palette,
     private val onChanged: () -> Unit
 ) {
     data class Palette(
@@ -47,31 +47,40 @@ class Wh78SettingsDialog(
     )
 
     private var dialog: Dialog? = null
+    private var settingsScroll: ScrollView? = null
+    private var settingsCard: MaterialCardView? = null
+    private var themeSummaryView: TextView? = null
+    private val paletteViews = mutableListOf<View>()
 
     fun show() {
         val scroll = ScrollView(activity).apply {
             isFillViewport = true
-            setBackgroundColor(palette.background)
+            setBackgroundColor(Color.TRANSPARENT)
         }
+        settingsScroll = scroll
         val content = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(20), dp(18), dp(20), dp(18))
+            setPadding(dp(16), dp(10), dp(16), dp(10))
         }
         scroll.addView(content)
 
         val title = TextView(activity).apply {
             text = "Настройки"
-            textSize = 27f
+            textSize = 24f
+            tag = TAG_PRIMARY_TEXT
+            paletteViews += this
             setTextColor(palette.text)
             typeface = android.graphics.Typeface.DEFAULT_BOLD
-            setPadding(0, 0, 0, dp(18))
+            setPadding(0, 0, 0, dp(8))
         }
         content.addView(title)
 
         addSection(content, "Подключение")
         val auto = MaterialSwitch(activity).apply {
             text = "Автоподключение при запуске"
-            textSize = 16f
+            textSize = 15f
+            tag = TAG_PRIMARY_TEXT
+            paletteViews += this
             setTextColor(palette.text)
             isChecked = isAutoConnectEnabled(activity)
             setOnCheckedChangeListener { _, checked ->
@@ -114,13 +123,15 @@ class Wh78SettingsDialog(
 
         val close = TextView(activity).apply {
             text = "Закрыть"
-            textSize = 16f
+            textSize = 15f
+            tag = TAG_PRIMARY_TEXT
+            paletteViews += this
             gravity = Gravity.CENTER
             setTextColor(palette.text)
-            setPadding(0, dp(14), 0, 0)
+            setPadding(0, dp(5), 0, 0)
             setOnClickListener { dismiss() }
         }
-        content.addView(close, LinearLayout.LayoutParams(-1, dp(54)))
+        content.addView(close, LinearLayout.LayoutParams(-1, dp(40)))
 
         val card = MaterialCardView(activity).apply {
             radius = dp(26).toFloat()
@@ -130,6 +141,7 @@ class Wh78SettingsDialog(
             strokeColor = palette.outline
             addView(scroll, ViewGroup.LayoutParams(-1, -2))
         }
+        settingsCard = card
 
         dialog = Dialog(activity).apply {
             setContentView(card)
@@ -139,23 +151,44 @@ class Wh78SettingsDialog(
         dialog?.show()
         dialog?.window?.setLayout(
             (activity.resources.displayMetrics.widthPixels - dp(24)).coerceAtLeast(dp(300)),
-            (activity.resources.displayMetrics.heightPixels * 0.90f).toInt()
+            ViewGroup.LayoutParams.WRAP_CONTENT
         )
+        CoroutineScope(Dispatchers.Main).launch {
+            themeSummaryView?.text = prettyThemeName(UserKnobs.appTheme.first())
+        }
     }
 
     private fun addSection(parent: LinearLayout, text: String) {
-        parent.addView(TextView(activity).apply {
+        val section = TextView(activity).apply {
             this.text = text.uppercase()
             textSize = 12f
-            setTextColor(palette.secondaryText)
-            letterSpacing = 0.10f
-            setPadding(2, dp(14), 2, dp(7))
-        }, LinearLayout.LayoutParams(-1, dp(38)))
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            tag = TAG_SECTION
+            paletteViews += this
+            setTextColor(palette.accent)
+            letterSpacing = 0.08f
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(8), 0, dp(8), 0)
+            background = sectionBackground(palette.accent)
+        }
+        parent.addView(section, LinearLayout.LayoutParams(-1, dp(28)).apply {
+            topMargin = dp(2)
+            bottomMargin = dp(4)
+        })
     }
+
+    private fun sectionBackground(accent: Int): android.graphics.drawable.GradientDrawable =
+        android.graphics.drawable.GradientDrawable().apply {
+            shape = android.graphics.drawable.GradientDrawable.RECTANGLE
+            cornerRadius = dp(7).toFloat()
+            setColor(Color.argb(28, Color.red(accent), Color.green(accent), Color.blue(accent)))
+        }
 
     private fun addRow(parent: LinearLayout, title: String, subtitle: String, action: () -> Unit) {
         val card = MaterialCardView(activity).apply {
-            radius = dp(18).toFloat()
+            tag = TAG_ROW_CARD
+            paletteViews += this
+            radius = dp(16).toFloat()
             cardElevation = 0f
             setCardBackgroundColor(palette.background)
             strokeWidth = dp(1)
@@ -164,46 +197,65 @@ class Wh78SettingsDialog(
         }
         val box = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(12), dp(16), dp(12))
+            setPadding(dp(14), dp(7), dp(14), dp(7))
         }
         box.addView(TextView(activity).apply {
             text = title
-            textSize = 16f
+            textSize = 15f
+            tag = TAG_PRIMARY_TEXT
+            paletteViews += this
             setTextColor(palette.text)
         })
-        box.addView(TextView(activity).apply {
+        val subtitleView = TextView(activity).apply {
             text = subtitle
-            textSize = 13f
+            textSize = 12f
+            tag = TAG_SECONDARY_TEXT
+            paletteViews += this
             setTextColor(palette.secondaryText)
-            setPadding(0, dp(3), 0, 0)
-        })
+            setPadding(0, dp(1), 0, 0)
+        }
+        if (title == "Тема") themeSummaryView = subtitleView
+        box.addView(subtitleView)
         card.addView(box, ViewGroup.LayoutParams(-1, -2))
         parent.addView(card, LinearLayout.LayoutParams(-1, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-            bottomMargin = dp(8)
+            bottomMargin = dp(5)
         })
     }
 
     private fun chooseTheme() {
+        // Match the WH78 logo tap: cycle to the next theme without closing/recreating this dialog.
         CoroutineScope(Dispatchers.Main).launch {
             val themes = AppTheme.entries
-            val currentKey = UserKnobs.appTheme.first()
-            val selected = themes.indexOfFirst { it.key == currentKey }.coerceAtLeast(0)
-            val labels = themes.map { prettyThemeName(it.key) }.toTypedArray()
-            MaterialAlertDialogBuilder(activity)
-                .setTitle("Тема")
-                .setSingleChoiceItems(labels, selected) { d, which ->
-                    val theme = themes[which]
-                    CoroutineScope(Dispatchers.Main).launch {
-                        UserKnobs.setAppTheme(theme.key)
-                        onThemeChanged(theme)
-                        onChanged()
-                        d.dismiss()
-                        dismiss()
-                        show()
-                    }
+            val current = AppTheme.fromKey(UserKnobs.appTheme.first())
+            val currentIndex = themes.indexOf(current).coerceAtLeast(0)
+            val next = themes[(currentIndex + 1) % themes.size]
+            UserKnobs.setAppTheme(next.key)
+            palette = onThemeChanged(next)
+            themeSummaryView?.text = prettyThemeName(next.key)
+            applyPaletteToDialog()
+            onChanged()
+        }
+    }
+
+    private fun applyPaletteToDialog() {
+        settingsScroll?.setBackgroundColor(Color.TRANSPARENT)
+        settingsCard?.apply {
+            setCardBackgroundColor(palette.surface)
+            strokeColor = palette.outline
+        }
+        paletteViews.forEach { view ->
+            when (view.tag as? String) {
+                TAG_PRIMARY_TEXT -> (view as? TextView)?.setTextColor(palette.text)
+                TAG_SECONDARY_TEXT -> (view as? TextView)?.setTextColor(palette.secondaryText)
+                TAG_SECTION -> (view as? TextView)?.apply {
+                    setTextColor(palette.accent)
+                    background = sectionBackground(palette.accent)
                 }
-                .setNegativeButton("Отмена", null)
-                .show()
+                TAG_ROW_CARD -> (view as? MaterialCardView)?.apply {
+                    setCardBackgroundColor(palette.background)
+                    strokeColor = palette.outline
+                }
+            }
         }
     }
 
@@ -227,7 +279,8 @@ class Wh78SettingsDialog(
                 return@launch
             }
             val proxy = ConfigProxy(config)
-            val field = EditText(activity).apply {
+            val dialogContext = Wh78DialogTheme.wrap(activity)
+            val field = EditText(dialogContext).apply {
                 setText(if (dnsOnly) proxy.`interface`.dnsServers else proxy.`interface`.mtu)
                 hint = if (dnsOnly) "Например: 1.1.1.1, 8.8.8.8" else "Например: 1280"
                 textSize = 16f
@@ -235,7 +288,7 @@ class Wh78SettingsDialog(
                 setPadding(dp(14), dp(8), dp(14), dp(8))
                 inputType = android.text.InputType.TYPE_CLASS_TEXT
             }
-            MaterialAlertDialogBuilder(activity)
+            MaterialAlertDialogBuilder(dialogContext)
                 .setTitle(if (dnsOnly) "Собственный DNS" else "MTU")
                 .setMessage(if (dnsOnly) "Серверы через запятую. Пустое значение — использовать DNS из профиля." else "Рекомендуемый диапазон: 1280–1420. Пустое значение — использовать значение из профиля.")
                 .setView(field)
@@ -276,7 +329,7 @@ class Wh78SettingsDialog(
     }
 
     private fun showAbout() {
-        MaterialAlertDialogBuilder(activity)
+        MaterialAlertDialogBuilder(Wh78DialogTheme.wrap(activity))
             .setTitle("О WH78")
             .setMessage(
                 "WH78 ${BuildConfig.MYVPN_BUILD}\n\n" +
@@ -294,10 +347,14 @@ class Wh78SettingsDialog(
     private fun toast(message: String) = Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
     private fun dismiss() { dialog?.dismiss(); dialog = null }
 
-    private fun rowLp(): LinearLayout.LayoutParams = LinearLayout.LayoutParams(-1, dp(58)).apply { bottomMargin = dp(8) }
+    private fun rowLp(): LinearLayout.LayoutParams = LinearLayout.LayoutParams(-1, dp(48)).apply { bottomMargin = dp(5) }
     private fun dp(value: Int): Int = (value * activity.resources.displayMetrics.density).toInt()
 
     companion object {
+        private const val TAG_PRIMARY_TEXT = "wh78-primary-text"
+        private const val TAG_SECONDARY_TEXT = "wh78-secondary-text"
+        private const val TAG_ROW_CARD = "wh78-row-card"
+        private const val TAG_SECTION = "wh78-section"
         private const val PREFS = "wh78_settings"
         private const val KEY_AUTOCONNECT = "auto_connect"
 

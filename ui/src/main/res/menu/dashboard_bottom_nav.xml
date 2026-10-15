@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/nav_home" android:icon="@drawable/ic_nav_home" android:title="Главная" />
-    <item android:id="@+id/nav_history" android:icon="@drawable/ic_nav_history" android:title="История" />
-    <item android:id="@+id/nav_tunneling" android:icon="@drawable/ic_nav_add" android:title="Добавить" />
+    <item android:id="@+id/nav_apps" android:icon="@drawable/ic_nav_apps" android:title="Приложения" />
+    <item android:id="@+id/nav_add" android:icon="@drawable/ic_nav_add" android:title="Добавить" />
     <item android:id="@+id/nav_settings" android:icon="@drawable/ic_nav_list" android:title="Список" />
 </menu>

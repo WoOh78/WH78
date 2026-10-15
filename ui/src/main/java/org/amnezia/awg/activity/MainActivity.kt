@@ -59,7 +59,7 @@ class MainActivity : BaseActivity(), FragmentManager.OnBackStackChangedListener 
                 bar.setDisplayHomeAsUpEnabled(backStackEntries >= minBackStackEntries)
             }
         }
-        bottomNav.menu.findItem(R.id.nav_tunneling)?.isChecked = backStackEntries == 0
+        bottomNav.menu.findItem(R.id.nav_add)?.isChecked = backStackEntries == 0
         invalidateOptionsMenu()
     }
 
@@ -71,7 +71,7 @@ class MainActivity : BaseActivity(), FragmentManager.OnBackStackChangedListener 
         isTwoPaneLayout = findViewById<View?>(R.id.master_detail_wrapper) != null
         bottomNav = findViewById(R.id.bottom_navigation)
         applyBottomNavigationTheme()
-        bottomNav.menu.findItem(R.id.nav_tunneling)?.isChecked = true
+        bottomNav.menu.findItem(R.id.nav_add)?.isChecked = true
         setupBottomNavigation()
         supportFragmentManager.addOnBackStackChangedListener(this)
         backPressedCallback = onBackPressedDispatcher.addCallback(this) { handleBackPressed() }
@@ -97,8 +97,8 @@ class MainActivity : BaseActivity(), FragmentManager.OnBackStackChangedListener 
                     openDashboard()
                     true
                 }
-                R.id.nav_tunneling -> true
-                R.id.nav_history -> {
+                R.id.nav_add -> true
+                R.id.nav_apps -> {
                     openDashboard()
                     false
                 }

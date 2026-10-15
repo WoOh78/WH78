@@ -36,11 +36,21 @@ android {
     }
     signingConfigs {
         create("wh78Release") {
-            storeFile = file(providers.gradleProperty("wh78StoreFile").get())
-            storePassword = providers.gradleProperty("wh78StorePassword").get()
-            keyAlias = providers.gradleProperty("wh78KeyAlias").get()
-            keyPassword = providers.gradleProperty("wh78KeyPassword").get()
-         }
+            val storePath = providers.gradleProperty("wh78StoreFile").orNull
+            val storePass = providers.gradleProperty("wh78StorePassword").orNull
+            val alias = providers.gradleProperty("wh78KeyAlias").orNull
+            val keyPass = providers.gradleProperty("wh78KeyPassword").orNull
+            // The release keystore may live on another machine. Do not fail project configuration
+            // for :ui:assembleDebug when those private properties are not available.
+            if (!storePath.isNullOrBlank() && !storePass.isNullOrBlank() &&
+                !alias.isNullOrBlank() && !keyPass.isNullOrBlank()
+            ) {
+                storeFile = file(storePath)
+                storePassword = storePass
+                keyAlias = alias
+                keyPassword = keyPass
+            }
+        }
     }
     buildTypes {    
         release {

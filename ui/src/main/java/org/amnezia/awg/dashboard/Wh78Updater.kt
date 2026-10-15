@@ -45,7 +45,7 @@ object Wh78Updater {
                     onMessage("Установлена последняя версия")
                     return@launch
                 }
-                MaterialAlertDialogBuilder(activity)
+                MaterialAlertDialogBuilder(Wh78DialogTheme.wrap(activity))
                     .setTitle("Доступно обновление")
                     .setMessage("${latest.name}\nТекущая версия: ${BuildConfig.MYVPN_BUILD}\nНовая версия: ${latest.tag}")
                     .setNegativeButton("Позже", null)

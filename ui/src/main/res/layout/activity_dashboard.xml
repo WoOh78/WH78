@@ -64,7 +64,8 @@
                         android:text="AmneziaWG private client"
                         android:textSize="10sp"
                         android:maxLines="1"
-                        android:ellipsize="end" />
+                        android:ellipsize="end"
+                        android:visibility="gone" />
                 </LinearLayout>
                 <TextView
                     android:id="@+id/feedback_button"

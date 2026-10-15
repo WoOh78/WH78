@@ -286,16 +286,12 @@ class DashboardActivity : BaseActivity() {
 
     private fun setupActions() {
         findViewById<View>(R.id.feedback_button).setOnClickListener {
-            try {
-                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(FEEDBACK_URL)))
-            } catch (_: Exception) {
-                Toast.makeText(this, getString(R.string.dashboard_feedback_unavailable), Toast.LENGTH_SHORT).show()
-            }
+            showFeedbackMenu()
         }
         findViewById<View>(R.id.share_button).setOnClickListener {
             val share = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, GITHUB_URL)
+                putExtra(Intent.EXTRA_TEXT, "${getString(R.string.dashboard_share_text)}\n\n$GITHUB_URL")
             }
             startActivity(Intent.createChooser(share, getString(R.string.dashboard_share_title)))
         }
@@ -306,6 +302,10 @@ class DashboardActivity : BaseActivity() {
         findViewById<View>(R.id.quick_whatsapp_card).setOnClickListener { runServiceTest(ServiceLatencyResolver.WHATSAPP) }
         findViewById<View>(R.id.quick_telegram_card).setOnClickListener { runServiceTest(ServiceLatencyResolver.TELEGRAM) }
         serverCard.setOnClickListener { runServerLatencyTest(force = true) }
+        trafficCard.isClickable = true
+        trafficCard.isFocusable = true
+        trafficCard.contentDescription = "Трафик. Нажмите, чтобы открыть историю"
+        trafficCard.setOnClickListener { showTrafficHistoryDialog() }
         connectButton.setOnClickListener {
             val tunnel = activeTunnel
             if (tunnel == null) {
@@ -329,8 +329,8 @@ class DashboardActivity : BaseActivity() {
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_home -> { showDashboardPage(); true }
-                R.id.nav_history -> { showTrafficHistoryDialog(); false }
-                R.id.nav_tunneling -> { showTunnelMenu(); false }
+                R.id.nav_apps -> { openApplicationsSettings(); false }
+                R.id.nav_add -> { showAddProfileMenu(); false }
                 R.id.nav_settings -> { showTunnelPage(); true }
                 else -> false
             }
@@ -396,7 +396,19 @@ class DashboardActivity : BaseActivity() {
             ),
             getActiveTunnel = { activeTunnel },
             onSplitTunneling = { tunnel -> showAppPicker(tunnel) },
-            onThemeChanged = { theme -> lifecycleScope.launch { applyTheme(theme) } },
+            onThemeChanged = { theme ->
+                applyTheme(theme)
+                val p = currentPalette()
+                Wh78SettingsDialog.Palette(
+                    background = p.background,
+                    surface = p.surface,
+                    text = p.text,
+                    secondaryText = p.secondaryText,
+                    accent = p.accent,
+                    accentText = p.accentText,
+                    outline = p.outline
+                )
+            },
             onChanged = { refreshOnce() }
         ).show()
     }
@@ -909,12 +921,18 @@ class DashboardActivity : BaseActivity() {
             .toFloat()
             .coerceIn(0f, 1f)
 
-        daysText.text = if (remainingDays >= 1L) "$remainingDays дн." else "${maxOf(1L, remainingHours)} ч."
+        val remainingLabel = if (remainingDays >= 1L) "$remainingDays дн." else "${maxOf(1L, remainingHours)} ч."
+        val progressColor = when {
+            progress < 0.15f -> Color.rgb(210, 48, 58)       // критически мало срока — красный
+            progress < 0.30f -> Color.rgb(190, 132, 30)      // скоро закончится — тёмно-жёлтый
+            else -> p.accent
+        }
+        daysText.text = "Осталось $remainingLabel"
         dateText.text = "до ${formatExpiryDate(expiresAtMs)}"
-        daysText.setTextColor(p.accent)
+        daysText.setTextColor(progressColor)
         dateText.setTextColor(p.secondaryText)
-        track.background = roundedColor(Color.argb(45, Color.red(p.accent), Color.green(p.accent), Color.blue(p.accent)))
-        fill.background = roundedColor(p.accent)
+        track.background = roundedColor(Color.argb(48, Color.red(progressColor), Color.green(progressColor), Color.blue(progressColor)))
+        fill.background = roundedColor(progressColor)
         setExpiryBarProgress(fill, track, progress)
     }
 
@@ -1135,7 +1153,17 @@ class DashboardActivity : BaseActivity() {
         }
     }
 
-    private fun showTunnelMenu() {
+    private fun openApplicationsSettings() {
+        val tunnel = activeTunnel
+        if (tunnel == null) {
+            Toast.makeText(this, "Сначала добавьте VPN-профиль", Toast.LENGTH_SHORT).show()
+            showAddProfileMenu()
+            return
+        }
+        showAppPicker(tunnel)
+    }
+
+    private fun showFeedbackMenu() {
         val p = currentPalette()
         val card = MaterialCardView(this).apply {
             radius = dp(26).toFloat()
@@ -1144,69 +1172,71 @@ class DashboardActivity : BaseActivity() {
             strokeWidth = dp(1)
             strokeColor = p.outline
         }
-
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(20), dp(18), dp(20), dp(12))
         }
         card.addView(content, ViewGroup.LayoutParams(-1, -2))
 
-        val title = TextView(this).apply {
-            text = "Добавить"
-            textSize = 24f
+        content.addView(TextView(this).apply {
+            text = "Обратная связь"
+            textSize = 22f
             setTextColor(p.text)
-        }
-        content.addView(title, LinearLayout.LayoutParams(-1, -2))
-
-        val hint = TextView(this).apply {
-            text = "Добавьте профиль или настройте приложения для текущего туннеля."
-            textSize = 14f
-            setTextColor(p.secondaryText)
-            setPadding(0, dp(8), 0, dp(14))
-        }
-        content.addView(hint, LinearLayout.LayoutParams(-1, -2))
+            typeface = Typeface.DEFAULT_BOLD
+        }, LinearLayout.LayoutParams(-1, -2))
 
         lateinit var dialog: Dialog
-
-        val appsButton = MaterialButton(this).apply {
-            text = "Приложения"
-            textSize = 15f
-            cornerRadius = dp(26)
-            insetTop = 0
-            insetBottom = 0
-            backgroundTintList = android.content.res.ColorStateList.valueOf(Color.rgb(255, 244, 204))
-            setTextColor(Color.rgb(126, 94, 20))
-            val tunnel = activeTunnel
-            isEnabled = tunnel != null
-            alpha = if (tunnel != null) 1f else 0.5f
-            setOnClickListener {
-                if (tunnel == null) return@setOnClickListener
-                dialog.dismiss()
-                showAppPicker(tunnel)
-            }
-        }
-        content.addView(appsButton, LinearLayout.LayoutParams(-1, dp(52)))
-
-        val addProfileButton = MaterialButton(this).apply {
-            text = "Добавить профиль"
+        val telegramButton = MaterialButton(this).apply {
+            text = "Telegram — написать боту"
             textSize = 15f
             setTextColor(p.accentText)
-            backgroundTintList = android.content.res.ColorStateList.valueOf(p.accent)
+            backgroundTintList = ColorStateList.valueOf(p.accent)
             cornerRadius = dp(26)
             insetTop = 0
             insetBottom = 0
+            setIconResource(R.drawable.ic_feedback_telegram)
+            iconTint = ColorStateList.valueOf(p.accentText)
+            iconSize = dp(24)
+            iconPadding = dp(10)
             setOnClickListener {
                 dialog.dismiss()
-                showAddProfileMenu()
+                try {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(FEEDBACK_TELEGRAM_URL)))
+                } catch (_: Exception) {
+                    Toast.makeText(this@DashboardActivity, getString(R.string.dashboard_feedback_unavailable), Toast.LENGTH_SHORT).show()
+                }
             }
         }
-        content.addView(addProfileButton, LinearLayout.LayoutParams(-1, dp(52)).apply { topMargin = dp(10) })
+        content.addView(telegramButton, LinearLayout.LayoutParams(-1, dp(52)).apply { topMargin = dp(14) })
+
+        val emailButton = MaterialButton(this).apply {
+            text = "Написать по почте"
+            textSize = 15f
+            setTextColor(p.accentText)
+            backgroundTintList = ColorStateList.valueOf(p.accent)
+            cornerRadius = dp(26)
+            insetTop = 0
+            insetBottom = 0
+            setIconResource(R.drawable.ic_feedback_email)
+            iconTint = ColorStateList.valueOf(p.accentText)
+            iconSize = dp(24)
+            iconPadding = dp(10)
+            setOnClickListener {
+                dialog.dismiss()
+                try {
+                    startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:wooh@tutamail.com")))
+                } catch (_: Exception) {
+                    Toast.makeText(this@DashboardActivity, "Не удалось открыть почтовое приложение", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        content.addView(emailButton, LinearLayout.LayoutParams(-1, dp(52)).apply { topMargin = dp(10) })
 
         val close = MaterialButton(this).apply {
             text = "Закрыть"
             textSize = 14f
             setTextColor(p.accent)
-            backgroundTintList = android.content.res.ColorStateList.valueOf(Color.TRANSPARENT)
+            backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
             insetTop = 0
             insetBottom = 0
             setOnClickListener { dialog.dismiss() }
@@ -1545,8 +1575,8 @@ class DashboardActivity : BaseActivity() {
 
     companion object {
         private const val TUNNEL_LIST_TAG = "MYVPN_TUNNEL_LIST"
-        private const val FEEDBACK_URL = "https://t.me/BurgerPills"
-        private const val GITHUB_URL = "https://github.com/WoOh78"
+        private const val FEEDBACK_TELEGRAM_URL = "http://t.me/WH78_official_bot"
+        private const val GITHUB_URL = "https://github.com/WoOh78/WH78"
         private const val EGRESS_REFRESH_INTERVAL_MS = 15 * 60 * 1000L
         private const val SERVER_PING_REFRESH_INTERVAL_MS = 15 * 60 * 1000L
         fun intent(context: Context) = Intent(context, DashboardActivity::class.java)

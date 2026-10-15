@@ -45,15 +45,33 @@
                 android:layout_width="wrap_content"
                 android:layout_height="48dp"
                 android:minWidth="0dp"
-                android:text="Готово"
-                android:textAllCaps="false" />
+                android:text="Сохранить"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorPrimary"
+                android:textAllCaps="false"
+                app:icon="@drawable/ic_action_save"
+                app:iconSize="22dp"
+                app:iconPadding="8dp"
+                app:iconTint="?attr/colorPrimary"
+                app:iconGravity="textStart" />
         </LinearLayout>
 
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/tabs"
             style="@style/Widget.Material3.TabLayout.OnSurface"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            app:tabMode="fixed"
+            app:tabGravity="fill"
+            app:tabBackground="@drawable/app_picker_tab_selector"
+            app:tabTextColor="?attr/colorOnSurfaceVariant"
+            app:tabSelectedTextColor="?attr/colorOnSecondaryContainer"
+            app:tabIndicatorColor="?attr/colorPrimary"
+            app:tabIndicatorHeight="3dp"
+            app:tabIndicatorFullWidth="true"
+            app:tabPaddingStart="6dp"
+            app:tabPaddingEnd="6dp">
 
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"

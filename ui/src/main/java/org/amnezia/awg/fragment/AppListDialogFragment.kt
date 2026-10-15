@@ -12,6 +12,7 @@ import android.content.pm.PackageManager
 import android.content.pm.PackageManager.PackageInfoFlags
 import android.os.Build
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.os.bundleOf
@@ -23,6 +24,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
 import org.amnezia.awg.BR
 import org.amnezia.awg.R
+import org.amnezia.awg.dashboard.Wh78DialogTheme
 import org.amnezia.awg.databinding.AppListDialogFragmentBinding
 import org.amnezia.awg.databinding.ObservableKeyedArrayList
 import org.amnezia.awg.model.ApplicationData
@@ -89,8 +91,9 @@ class AppListDialogFragment : DialogFragment() {
 
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val alertDialogBuilder = MaterialAlertDialogBuilder(requireActivity())
-        val binding = AppListDialogFragmentBinding.inflate(requireActivity().layoutInflater, null, false)
+        val themedContext = Wh78DialogTheme.wrap(requireActivity())
+        val alertDialogBuilder = MaterialAlertDialogBuilder(themedContext)
+        val binding = AppListDialogFragmentBinding.inflate(LayoutInflater.from(themedContext), null, false)
         binding.executePendingBindings()
         alertDialogBuilder.setView(binding.root)
 

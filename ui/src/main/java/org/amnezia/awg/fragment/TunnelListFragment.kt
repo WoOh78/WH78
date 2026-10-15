@@ -21,6 +21,7 @@ import com.journeyapps.barcodescanner.ScanOptions
 import org.amnezia.awg.Application
 import org.amnezia.awg.R
 import org.amnezia.awg.activity.TunnelCreatorActivity
+import org.amnezia.awg.dashboard.Wh78DialogTheme
 import org.amnezia.awg.databinding.ObservableKeyedRecyclerViewAdapter.RowConfigurationHandler
 import org.amnezia.awg.databinding.TunnelListFragmentBinding
 import org.amnezia.awg.databinding.TunnelListItemBinding
@@ -177,7 +178,7 @@ class TunnelListFragment : BaseFragment() {
 
     private fun showDeleteConfirmation(tunnel: ObservableTunnel) {
         val host = activity ?: return
-        MaterialAlertDialogBuilder(host)
+        MaterialAlertDialogBuilder(Wh78DialogTheme.wrap(host))
             .setIcon(R.drawable.ic_action_delete)
             .setTitle("Удалить туннель?")
             .setMessage("Профиль «${tunnel.name}» будет удалён с устройства.")
