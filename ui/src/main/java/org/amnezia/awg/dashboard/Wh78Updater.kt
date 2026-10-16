@@ -23,43 +23,58 @@ object Wh78Updater {
     private const val API_URL = "https://api.github.com/repos/WoOh78/WH78/releases/latest"
     private const val STATUS_ACTION = "ru.wooh.wh78.UPDATE_STATUS"
 
-    fun checkAndOffer(activity: DashboardActivity, palette: Wh78SettingsDialog.Palette, onMessage: (String) -> Unit) {
+    data class Release(val tag: String, val name: String, val apkUrl: String)
+
+    data class UpdateStatus(val message: String, val release: Release? = null)
+
+    /** Checks GitHub quietly so the settings page can show a persistent update banner. */
+    fun checkStatus(onResult: (UpdateStatus) -> Unit) {
         CoroutineScope(Dispatchers.Main).launch {
-            try {
+            val status = try {
                 val latest = withContext(Dispatchers.IO) { getLatestRelease() }
                 if (latest == null) {
-                    onMessage("Пока нет опубликованных релизов")
-                    return@launch
-                }
-                val current = parseBuildNumber(BuildConfig.MYVPN_BUILD)
-                val latestNumber = parseBuildNumber(latest.tag)
-                if (current == null) {
-                    onMessage("Не удалось определить текущую версию: ${BuildConfig.MYVPN_BUILD}")
-                    return@launch
-                }
-                if (latestNumber == null) {
-                    onMessage("Некорректный тег релиза GitHub: ${latest.tag}. Ожидается формат b15")
-                    return@launch
-                }
-                if (latestNumber <= current) {
-                    onMessage("Установлена последняя версия")
-                    return@launch
-                }
-                MaterialAlertDialogBuilder(Wh78DialogTheme.wrap(activity))
-                    .setTitle("Доступно обновление")
-                    .setMessage("${latest.name}\nТекущая версия: ${BuildConfig.MYVPN_BUILD}\nНовая версия: ${latest.tag}")
-                    .setNegativeButton("Позже", null)
-                    .setPositiveButton("Скачать и установить") { _, _ ->
-                        downloadAndInstall(activity, latest.apkUrl, onMessage)
+                    UpdateStatus("Не удалось найти опубликованный релиз")
+                } else {
+                    val currentNumber = parseBuildNumber(BuildConfig.MYVPN_BUILD)
+                    val latestNumber = parseBuildNumber(latest.tag)
+                    when {
+                        currentNumber == null || latestNumber == null ->
+                            UpdateStatus("Не удалось определить номер релиза")
+                        latestNumber > currentNumber ->
+                            UpdateStatus("Доступно обновление ${latest.tag}", latest)
+                        else -> UpdateStatus("Установлена последняя версия ${BuildConfig.MYVPN_BUILD}")
                     }
-                    .show()
-            } catch (e: Throwable) {
-                onMessage("Не удалось проверить обновления: ${e.message ?: "ошибка сети"}")
+                }
+            } catch (_: Throwable) {
+                UpdateStatus("Не удалось проверить обновления")
             }
+            onResult(status)
         }
     }
 
-    private data class Release(val tag: String, val name: String, val apkUrl: String)
+    fun checkAndOffer(activity: DashboardActivity, palette: Wh78SettingsDialog.Palette, onMessage: (String) -> Unit) {
+        checkStatus { status ->
+            val release = status.release
+            if (release == null) onMessage(status.message)
+            else offerUpdate(activity, palette, release, onMessage)
+        }
+    }
+
+    fun offerUpdate(
+        activity: DashboardActivity,
+        palette: Wh78SettingsDialog.Palette,
+        release: Release,
+        onMessage: (String) -> Unit
+    ) {
+        MaterialAlertDialogBuilder(Wh78DialogTheme.wrap(activity))
+            .setTitle("Доступно обновление")
+            .setMessage("${release.name}\nТекущая версия: ${BuildConfig.MYVPN_BUILD}\nНовая версия: ${release.tag}")
+            .setNegativeButton("Позже", null)
+            .setPositiveButton("Скачать и установить") { _, _ ->
+                downloadAndInstall(activity, release.apkUrl, onMessage)
+            }
+            .show()
+    }
 
     private fun getLatestRelease(): Release? {
         val conn = URL(API_URL).openConnection() as HttpURLConnection

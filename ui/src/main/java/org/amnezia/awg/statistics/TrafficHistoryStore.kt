@@ -11,7 +11,7 @@ import kotlin.math.max
 
 /**
  * Small dependency-free traffic history store for the first application iteration.
- * It stores daily deltas instead of every packet/sample and keeps an all-time counter.
+ * It aggregates traffic into daily and hourly buckets instead of storing individual packets/samples, and keeps an all-time counter.
  */
 class TrafficHistoryStore(context: Context) {
     data class Usage(val rxBytes: Long, val txBytes: Long) {
@@ -23,6 +23,7 @@ class TrafficHistoryStore(context: Context) {
     private val prefs = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
     private val lock = Any()
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+    private val hourFormat = SimpleDateFormat("yyyy-MM-dd-HH", Locale.US)
 
     fun record(tunnelName: String, rxBytes: Long, txBytes: Long, timestamp: Long = System.currentTimeMillis()) {
         if (rxBytes < 0 || txBytes < 0) return
@@ -38,14 +39,21 @@ class TrafficHistoryStore(context: Context) {
             val current = days[key] ?: Usage(0, 0)
             days[key] = Usage(current.rxBytes + deltaRx, current.txBytes + deltaTx)
 
+            val hours = readHours()
+            val hourKey = hourKey(timestamp)
+            val hour = hours[hourKey] ?: Usage(0, 0)
+            hours[hourKey] = Usage(safeAdd(hour.rxBytes, deltaRx), safeAdd(hour.txBytes, deltaTx))
+
             val total = readTotal()
             val totalRx = safeAdd(total.rxBytes, deltaRx)
             val totalTx = safeAdd(total.txBytes, deltaTx)
             prune(days, timestamp)
+            pruneHours(hours, timestamp)
 
             prefs.edit()
                 .putString(KEY_LAST_COUNTERS, writeLastCounters(last))
                 .putString(KEY_DAILY, writeDays(days))
+                .putString(KEY_HOURLY, writeDays(hours))
                 .putLong(KEY_TOTAL_RX, totalRx)
                 .putLong(KEY_TOTAL_TX, totalTx)
                 .apply()
@@ -80,6 +88,24 @@ class TrafficHistoryStore(context: Context) {
     }
 
     fun allTime(): Usage = synchronized(lock) { readTotal() }
+
+    /** Returns 24 hourly totals, from the oldest hour to the current hour. */
+    fun hourly24(now: Long = System.currentTimeMillis()): List<DayUsage> {
+        val calendar = Calendar.getInstance().apply {
+            timeInMillis = now
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val stored = synchronized(lock) { readHours() }
+        val result = ArrayList<DayUsage>(24)
+        repeat(24) {
+            val hour = calendar.get(Calendar.HOUR_OF_DAY)
+            result += DayUsage("hour:" + String.format(Locale.US, "%02d", hour), stored[hourKey(calendar.timeInMillis)] ?: Usage(0, 0))
+            calendar.add(Calendar.HOUR_OF_DAY, -1)
+        }
+        return result.asReversed()
+    }
 
     fun daily(daysBack: Int = 7, now: Long = System.currentTimeMillis()): List<DayUsage> {
         val calendar = Calendar.getInstance().apply { timeInMillis = now }
@@ -135,9 +161,41 @@ class TrafficHistoryStore(context: Context) {
 
     private fun dateKey(timestamp: Long): String = dateFormat.format(Date(timestamp))
 
+    private fun hourKey(timestamp: Long): String = synchronized(hourFormat) {
+        hourFormat.format(Date(timestamp))
+    }
+
+    private fun pruneHours(hours: MutableMap<String, Usage>, now: Long) {
+        val cutoff = Calendar.getInstance().apply {
+            timeInMillis = now
+            add(Calendar.HOUR_OF_DAY, -48)
+        }.timeInMillis
+        hours.keys.removeAll { key ->
+            try {
+                (synchronized(hourFormat) { hourFormat.parse(key)?.time } ?: Long.MAX_VALUE) < cutoff
+            } catch (_: Exception) {
+                true
+            }
+        }
+    }
+
     private data class Counter(val rx: Long, val tx: Long)
 
     private fun readTotal() = Usage(prefs.getLong(KEY_TOTAL_RX, 0), prefs.getLong(KEY_TOTAL_TX, 0))
+
+    private fun readHours(): MutableMap<String, Usage> {
+        val source = prefs.getString(KEY_HOURLY, null) ?: return LinkedHashMap()
+        val result = LinkedHashMap<String, Usage>()
+        try {
+            val json = JSONObject(source)
+            json.keys().forEach { key ->
+                val item = json.optJSONObject(key) ?: return@forEach
+                result[key] = Usage(item.optLong("rx", 0), item.optLong("tx", 0))
+            }
+        } catch (_: Exception) {
+        }
+        return result
+    }
 
     private fun readDays(): MutableMap<String, Usage> {
         val source = prefs.getString(KEY_DAILY, null) ?: return LinkedHashMap()
@@ -188,6 +246,7 @@ class TrafficHistoryStore(context: Context) {
     companion object {
         private const val FILE_NAME = "traffic_history"
         private const val KEY_DAILY = "daily"
+        private const val KEY_HOURLY = "hourly"
         private const val KEY_TOTAL_RX = "total_rx"
         private const val KEY_TOTAL_TX = "total_tx"
         private const val KEY_LAST_COUNTERS = "last_counters"

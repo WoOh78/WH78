@@ -3,13 +3,18 @@ package org.amnezia.awg.dashboard
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.view.Window
+import android.view.WindowManager
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -21,13 +26,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.amnezia.awg.BuildConfig
-import org.amnezia.awg.backend.Tunnel
 import org.amnezia.awg.model.ObservableTunnel
 import org.amnezia.awg.util.UserKnobs
 import org.amnezia.awg.viewmodel.ConfigProxy
 
+/**
+ * WH78 settings page. It is hosted in a full-window dialog to preserve the existing
+ * DashboardActivity callbacks while behaving visually like a normal full-screen page.
+ */
 class Wh78SettingsDialog(
     private val activity: DashboardActivity,
     private var palette: Palette,
@@ -47,47 +54,55 @@ class Wh78SettingsDialog(
     )
 
     private var dialog: Dialog? = null
-    private var settingsScroll: ScrollView? = null
-    private var settingsCard: MaterialCardView? = null
-    private var themeSummaryView: TextView? = null
-    private val paletteViews = mutableListOf<View>()
+    private var updateStatusView: TextView? = null
+    private var updateBanner: MaterialCardView? = null
+    private var updateBannerText: TextView? = null
+    private var pendingRelease: Wh78Updater.Release? = null
 
     fun show() {
+        val page = LinearLayout(activity).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(palette.background)
+        }
+
+        val toolbar = LinearLayout(activity).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(8), dp(3), dp(20), dp(3))
+            setBackgroundColor(palette.background)
+        }
+        val back = ImageButton(activity).apply {
+            setImageResource(org.amnezia.awg.R.drawable.ic_arrow_back)
+            imageTintList = ColorStateList.valueOf(palette.text)
+            background = ColorDrawable(Color.TRANSPARENT)
+            contentDescription = "Назад"
+            setPadding(dp(10), dp(10), dp(10), dp(10))
+            setOnClickListener { dismiss() }
+        }
+        toolbar.addView(back, LinearLayout.LayoutParams(dp(48), dp(52)))
+        toolbar.addView(TextView(activity).apply {
+            text = "Настройки"
+            textSize = 23f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(palette.text)
+            setPadding(dp(10), 0, 0, 0)
+        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        page.addView(toolbar, LinearLayout.LayoutParams(-1, dp(58)))
+
         val scroll = ScrollView(activity).apply {
             isFillViewport = true
-            setBackgroundColor(Color.TRANSPARENT)
+            clipToPadding = false
+            setBackgroundColor(palette.background)
         }
-        settingsScroll = scroll
         val content = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(10), dp(16), dp(10))
+            setPadding(dp(20), dp(8), dp(20), dp(26))
         }
-        scroll.addView(content)
-
-        val title = TextView(activity).apply {
-            text = "Настройки"
-            textSize = 24f
-            tag = TAG_PRIMARY_TEXT
-            paletteViews += this
-            setTextColor(palette.text)
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
-            setPadding(0, 0, 0, dp(8))
-        }
-        content.addView(title)
+        scroll.addView(content, ViewGroup.LayoutParams(-1, -2))
+        page.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
 
         addSection(content, "Подключение")
-        val auto = MaterialSwitch(activity).apply {
-            text = "Автоподключение при запуске"
-            textSize = 15f
-            tag = TAG_PRIMARY_TEXT
-            paletteViews += this
-            setTextColor(palette.text)
-            isChecked = isAutoConnectEnabled(activity)
-            setOnCheckedChangeListener { _, checked ->
-                prefs(activity).edit().putBoolean(KEY_AUTOCONNECT, checked).apply()
-            }
-        }
-        content.addView(auto, rowLp())
+        addAutoConnectRow(content)
 
         addSection(content, "Сеть")
         addRow(content, "Раздельное туннелирование", "Выбор приложений для VPN или обхода VPN") {
@@ -99,163 +114,229 @@ class Wh78SettingsDialog(
                 onSplitTunneling(tunnel)
             }
         }
-        addRow(content, "Собственный DNS", dnsSummary()) {
-            editNetworkSettings(dnsOnly = true)
-        }
-        addRow(content, "MTU", mtuSummary()) {
-            editNetworkSettings(dnsOnly = false)
-        }
+        addRow(
+            content,
+            "Расширенные настройки сети",
+            "Собственный DNS и MTU активного профиля"
+        ) { showAdvancedNetworkSettings() }
 
         addSection(content, "Внешний вид")
-        addRow(content, "Тема", themeSummary()) {
+        addRow(content, "Тема оформления", "Выбрать цветовую схему WH78", showChevron = false) {
             chooseTheme()
         }
 
         addSection(content, "Обновление")
-        addRow(content, "Проверить обновления", "GitHub · ${BuildConfig.MYVPN_BUILD}") {
+        addRow(content, "Проверить обновления", "Автоматическая проверка при открытии настроек", showChevron = false) {
             checkUpdates()
         }
+        makeUpdateBanner(content)
 
         addSection(content, "О программе")
-        addRow(content, "О WH78", "WH78 ${BuildConfig.MYVPN_BUILD}") {
-            showAbout()
-        }
+        addRow(
+            content,
+            "Версия приложения",
+            "WH78 ${BuildConfig.MYVPN_BUILD} · AmneziaWG ${BuildConfig.AMNEZIAWG_VERSION_NAME}"
+        ) { showAbout() }
 
-        val close = TextView(activity).apply {
-            text = "Закрыть"
-            textSize = 15f
-            tag = TAG_PRIMARY_TEXT
-            paletteViews += this
-            gravity = Gravity.CENTER
-            setTextColor(palette.text)
-            setPadding(0, dp(5), 0, 0)
-            setOnClickListener { dismiss() }
+        updateStatusView = TextView(activity).apply {
+            text = "Установлена версия ${BuildConfig.MYVPN_BUILD} · проверяем обновления…"
+            textSize = 12f
+            setTextColor(palette.secondaryText)
+            setPadding(dp(2), dp(16), dp(2), dp(6))
         }
-        content.addView(close, LinearLayout.LayoutParams(-1, dp(40)))
-
-        val card = MaterialCardView(activity).apply {
-            radius = dp(26).toFloat()
-            cardElevation = 0f
-            setCardBackgroundColor(palette.surface)
-            strokeWidth = dp(1)
-            strokeColor = palette.outline
-            addView(scroll, ViewGroup.LayoutParams(-1, -2))
-        }
-        settingsCard = card
+        content.addView(updateStatusView, LinearLayout.LayoutParams(-1, ViewGroup.LayoutParams.WRAP_CONTENT))
 
         dialog = Dialog(activity).apply {
-            setContentView(card)
-            setCanceledOnTouchOutside(true)
-            window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            requestWindowFeature(Window.FEATURE_NO_TITLE)
+            setContentView(page)
+            setCancelable(true)
+            setCanceledOnTouchOutside(false)
         }
         dialog?.show()
-        dialog?.window?.setLayout(
-            (activity.resources.displayMetrics.widthPixels - dp(24)).coerceAtLeast(dp(300)),
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        )
-        CoroutineScope(Dispatchers.Main).launch {
-            themeSummaryView?.text = prettyThemeName(UserKnobs.appTheme.first())
+        dialog?.window?.apply {
+            setBackgroundDrawable(ColorDrawable(palette.background))
+            clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+            setDimAmount(0f)
+            statusBarColor = palette.background
+            navigationBarColor = palette.background
+            setGravity(Gravity.FILL)
+            setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+            decorView.systemUiVisibility = if (isLightColor(palette.background)) {
+                View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+            } else {
+                0
+            }
         }
+
+        // Check quietly on entry; if a newer b-tag exists, show a banner instead of a surprise dialog.
+        refreshUpdateStatus(showFeedback = false)
+    }
+
+    private fun addAutoConnectRow(parent: LinearLayout) {
+        val row = LinearLayout(activity).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(4), dp(3), dp(4), dp(3))
+        }
+        row.addView(TextView(activity).apply {
+            text = "Автоподключение при запуске"
+            textSize = 15f
+            setTextColor(palette.text)
+            maxLines = 2
+        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+
+        val states = arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf())
+        val toggle = MaterialSwitch(activity).apply {
+            text = null
+            isChecked = isAutoConnectEnabled(activity)
+            thumbTintList = ColorStateList(
+                states,
+                intArrayOf(palette.accent, Color.rgb(205, 214, 210))
+            )
+            trackTintList = ColorStateList(
+                states,
+                intArrayOf(palette.accent, palette.outline)
+            )
+            minimumWidth = dp(54)
+            setPadding(dp(4), 0, 0, 0)
+            contentDescription = "Автоподключение при запуске"
+            setOnCheckedChangeListener { _, checked ->
+                prefs(activity).edit().putBoolean(KEY_AUTOCONNECT, checked).apply()
+            }
+        }
+        row.addView(toggle, LinearLayout.LayoutParams(dp(62), dp(48)).apply {
+            marginStart = dp(18)
+        })
+        parent.addView(row, LinearLayout.LayoutParams(-1, dp(66)).apply {
+            bottomMargin = dp(7)
+        })
     }
 
     private fun addSection(parent: LinearLayout, text: String) {
         val section = TextView(activity).apply {
             this.text = text.uppercase()
             textSize = 12f
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
-            tag = TAG_SECTION
-            paletteViews += this
-            setTextColor(palette.accent)
+            typeface = Typeface.DEFAULT_BOLD
             letterSpacing = 0.08f
+            setTextColor(palette.accent)
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(8), 0, dp(8), 0)
+            setPadding(dp(9), 0, dp(9), 0)
             background = sectionBackground(palette.accent)
         }
-        parent.addView(section, LinearLayout.LayoutParams(-1, dp(28)).apply {
-            topMargin = dp(2)
-            bottomMargin = dp(4)
-        })
-    }
-
-    private fun sectionBackground(accent: Int): android.graphics.drawable.GradientDrawable =
-        android.graphics.drawable.GradientDrawable().apply {
-            shape = android.graphics.drawable.GradientDrawable.RECTANGLE
-            cornerRadius = dp(7).toFloat()
-            setColor(Color.argb(28, Color.red(accent), Color.green(accent), Color.blue(accent)))
-        }
-
-    private fun addRow(parent: LinearLayout, title: String, subtitle: String, action: () -> Unit) {
-        val card = MaterialCardView(activity).apply {
-            tag = TAG_ROW_CARD
-            paletteViews += this
-            radius = dp(16).toFloat()
-            cardElevation = 0f
-            setCardBackgroundColor(palette.background)
-            strokeWidth = dp(1)
-            strokeColor = palette.outline
-            setOnClickListener { action() }
-        }
-        val box = LinearLayout(activity).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(14), dp(7), dp(14), dp(7))
-        }
-        box.addView(TextView(activity).apply {
-            text = title
-            textSize = 15f
-            tag = TAG_PRIMARY_TEXT
-            paletteViews += this
-            setTextColor(palette.text)
-        })
-        val subtitleView = TextView(activity).apply {
-            text = subtitle
-            textSize = 12f
-            tag = TAG_SECONDARY_TEXT
-            paletteViews += this
-            setTextColor(palette.secondaryText)
-            setPadding(0, dp(1), 0, 0)
-        }
-        if (title == "Тема") themeSummaryView = subtitleView
-        box.addView(subtitleView)
-        card.addView(box, ViewGroup.LayoutParams(-1, -2))
-        parent.addView(card, LinearLayout.LayoutParams(-1, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+        parent.addView(section, LinearLayout.LayoutParams(-1, dp(29)).apply {
+            topMargin = dp(4)
             bottomMargin = dp(5)
         })
     }
 
-    private fun chooseTheme() {
-        // Match the WH78 logo tap: cycle to the next theme without closing/recreating this dialog.
-        CoroutineScope(Dispatchers.Main).launch {
-            val themes = AppTheme.entries
-            val current = AppTheme.fromKey(UserKnobs.appTheme.first())
-            val currentIndex = themes.indexOf(current).coerceAtLeast(0)
-            val next = themes[(currentIndex + 1) % themes.size]
-            UserKnobs.setAppTheme(next.key)
-            palette = onThemeChanged(next)
-            themeSummaryView?.text = prettyThemeName(next.key)
-            applyPaletteToDialog()
-            onChanged()
-        }
+    private fun sectionBackground(accent: Int) = android.graphics.drawable.GradientDrawable().apply {
+        shape = android.graphics.drawable.GradientDrawable.RECTANGLE
+        cornerRadius = dp(8).toFloat()
+        setColor(Color.argb(27, Color.red(accent), Color.green(accent), Color.blue(accent)))
     }
 
-    private fun applyPaletteToDialog() {
-        settingsScroll?.setBackgroundColor(Color.TRANSPARENT)
-        settingsCard?.apply {
+    private fun addRow(
+        parent: LinearLayout,
+        title: String,
+        subtitle: String,
+        showChevron: Boolean = true,
+        action: () -> Unit
+    ) {
+        val card = MaterialCardView(activity).apply {
+            radius = dp(17).toFloat()
+            cardElevation = 0f
             setCardBackgroundColor(palette.surface)
+            strokeWidth = dp(1)
             strokeColor = palette.outline
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { action() }
         }
-        paletteViews.forEach { view ->
-            when (view.tag as? String) {
-                TAG_PRIMARY_TEXT -> (view as? TextView)?.setTextColor(palette.text)
-                TAG_SECONDARY_TEXT -> (view as? TextView)?.setTextColor(palette.secondaryText)
-                TAG_SECTION -> (view as? TextView)?.apply {
-                    setTextColor(palette.accent)
-                    background = sectionBackground(palette.accent)
-                }
-                TAG_ROW_CARD -> (view as? MaterialCardView)?.apply {
-                    setCardBackgroundColor(palette.background)
-                    strokeColor = palette.outline
-                }
+        val row = LinearLayout(activity).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(14), dp(10), dp(10), dp(10))
+        }
+        val texts = LinearLayout(activity).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, 0, dp(8), 0)
+        }
+        texts.addView(TextView(activity).apply {
+            text = title
+            textSize = 15.5f
+            setTextColor(palette.text)
+        })
+        texts.addView(TextView(activity).apply {
+            text = subtitle
+            textSize = 12.5f
+            setTextColor(palette.secondaryText)
+            setPadding(0, dp(2), 0, 0)
+        })
+        row.addView(texts, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        if (showChevron) {
+            row.addView(TextView(activity).apply {
+                text = "›"
+                textSize = 27f
+                gravity = Gravity.CENTER
+                setTextColor(palette.accent)
+            }, LinearLayout.LayoutParams(dp(24), ViewGroup.LayoutParams.WRAP_CONTENT))
+        }
+        card.addView(row, ViewGroup.LayoutParams(-1, -2))
+        parent.addView(card, LinearLayout.LayoutParams(-1, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            bottomMargin = dp(6)
+        })
+    }
+
+    private fun makeUpdateBanner(parent: LinearLayout) {
+        val card = MaterialCardView(activity).apply {
+            radius = dp(14).toFloat()
+            cardElevation = 0f
+            setCardBackgroundColor(palette.surface)
+            strokeWidth = dp(1)
+            strokeColor = palette.accent
+            visibility = View.GONE
+            setOnClickListener {
+                val release = pendingRelease ?: return@setOnClickListener
+                Wh78Updater.offerUpdate(activity, palette, release) { message -> toast(message) }
             }
+        }
+        updateBannerText = TextView(activity).apply {
+            text = "Доступна новая версия"
+            textSize = 14f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(palette.accent)
+            setPadding(dp(14), dp(12), dp(14), dp(12))
+        }
+        card.addView(updateBannerText, ViewGroup.LayoutParams(-1, -2))
+        parent.addView(card, LinearLayout.LayoutParams(-1, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            bottomMargin = dp(8)
+        })
+        updateBanner = card
+    }
+
+    private fun chooseTheme() {
+        CoroutineScope(Dispatchers.Main).launch {
+            val themes = AppTheme.entries
+            val currentKey = UserKnobs.appTheme.first()
+            val selected = themes.indexOfFirst { it.key == currentKey }.coerceAtLeast(0)
+            val labels = themes.map { prettyThemeName(it.key) }.toTypedArray()
+            MaterialAlertDialogBuilder(Wh78DialogTheme.wrap(activity))
+                .setTitle("Тема оформления")
+                .setSingleChoiceItems(labels, selected) { d, which ->
+                    val theme = themes[which]
+                    CoroutineScope(Dispatchers.Main).launch {
+                        UserKnobs.setAppTheme(theme.key)
+                        palette = onThemeChanged(theme)
+                        onChanged()
+                        d.dismiss()
+                        dismiss()
+                        show()
+                    }
+                }
+                .setNegativeButton("Отмена", null)
+                .show()
         }
     }
 
@@ -265,6 +346,17 @@ class Wh78SettingsDialog(
         "blue" -> "Blue"
         "cyberpunk" -> "Cyberpunk"
         else -> key.replace('_', ' ').replace('-', ' ').replaceFirstChar { it.uppercase() }
+    }
+
+    /** The item list is intentionally not combined with setMessage(): AlertDialog can't show both. */
+    private fun showAdvancedNetworkSettings() {
+        MaterialAlertDialogBuilder(Wh78DialogTheme.wrap(activity))
+            .setTitle("Расширенные настройки сети")
+            .setItems(arrayOf("Собственный DNS", "MTU")) { _, which ->
+                editNetworkSettings(dnsOnly = which == 0)
+            }
+            .setNegativeButton("Назад", null)
+            .show()
     }
 
     private fun editNetworkSettings(dnsOnly: Boolean) {
@@ -290,17 +382,22 @@ class Wh78SettingsDialog(
             }
             MaterialAlertDialogBuilder(dialogContext)
                 .setTitle(if (dnsOnly) "Собственный DNS" else "MTU")
-                .setMessage(if (dnsOnly) "Серверы через запятую. Пустое значение — использовать DNS из профиля." else "Рекомендуемый диапазон: 1280–1420. Пустое значение — использовать значение из профиля.")
+                .setMessage(
+                    if (dnsOnly) "Серверы через запятую. Пустое значение — использовать DNS из профиля."
+                    else "Рекомендуемый диапазон: 1280–1420. Пустое значение — использовать значение из профиля."
+                )
                 .setView(field)
                 .setNegativeButton("Отмена", null)
                 .setPositiveButton("Сохранить") { _, _ ->
                     CoroutineScope(Dispatchers.Main).launch {
                         try {
-                            if (dnsOnly) proxy.`interface`.dnsServers = field.text.toString().trim()
-                            else {
+                            if (dnsOnly) {
+                                proxy.`interface`.dnsServers = field.text.toString().trim()
+                            } else {
                                 val mtu = field.text.toString().trim()
                                 if (mtu.isNotEmpty()) {
-                                    val n = mtu.toIntOrNull() ?: throw IllegalArgumentException("MTU должен быть числом")
+                                    val n = mtu.toIntOrNull()
+                                        ?: throw IllegalArgumentException("MTU должен быть числом")
                                     if (n !in 576..9000) throw IllegalArgumentException("MTU должен быть от 576 до 9000")
                                 }
                                 proxy.`interface`.mtu = mtu
@@ -317,44 +414,78 @@ class Wh78SettingsDialog(
         }
     }
 
-    private fun dnsSummary(): String = if (getActiveTunnel() == null) "Нет активного профиля" else "Настроить DNS для профиля"
-
-    private fun mtuSummary(): String = if (getActiveTunnel() == null) "Нет активного профиля" else "Настроить MTU для профиля"
-
-    private fun themeSummary(): String = "Выбрать тему"
-
     private fun checkUpdates() {
-        toast("Проверяем GitHub…")
-        Wh78Updater.checkAndOffer(activity, palette) { message -> toast(message) }
+        updateStatusView?.text = "Установлена версия ${BuildConfig.MYVPN_BUILD} · проверяем обновления…"
+        Wh78Updater.checkStatus { status ->
+            displayUpdateStatus(status)
+            if (status.release == null) toast(status.message)
+        }
+    }
+
+    private fun refreshUpdateStatus(showFeedback: Boolean) {
+        Wh78Updater.checkStatus { status ->
+            displayUpdateStatus(status)
+            if (showFeedback && status.release == null) toast(status.message)
+        }
+    }
+
+    private fun displayUpdateStatus(status: Wh78Updater.UpdateStatus) {
+        pendingRelease = status.release
+        val release = status.release
+        if (release != null) {
+            updateStatusView?.text = "Установлена версия ${BuildConfig.MYVPN_BUILD}"
+            updateBannerText?.text = "Доступна новая версия ${release.tag} · нажмите, чтобы установить"
+            updateBanner?.visibility = View.VISIBLE
+        } else {
+            updateBanner?.visibility = View.GONE
+            val message = status.message
+            updateStatusView?.text = if (message.startsWith("Установлена последняя версия")) {
+                "Установлена версия ${BuildConfig.MYVPN_BUILD}"
+            } else {
+                "Установлена версия ${BuildConfig.MYVPN_BUILD} · ${message.lowercase()}"
+            }
+        }
     }
 
     private fun showAbout() {
         MaterialAlertDialogBuilder(Wh78DialogTheme.wrap(activity))
-            .setTitle("О WH78")
+            .setTitle("Информация о приложении")
             .setMessage(
-                "WH78 ${BuildConfig.MYVPN_BUILD}\n\n" +
-                    "AmneziaWG ${BuildConfig.AMNEZIAWG_VERSION_NAME}\n" +
-                    "VPN client без регистрации.\n\n" +
+                "WH78: ${BuildConfig.MYVPN_BUILD}\n" +
+                    "AmneziaWG: ${BuildConfig.AMNEZIAWG_VERSION_NAME}\n\n" +
+                    "VPN-клиент без регистрации.\n\n" +
                     "GitHub\nhttps://github.com/WoOh78/WH78"
             )
             .setPositiveButton("Закрыть", null)
-            .setNeutralButton("GitHub") { _, _ ->
-                try { activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/WoOh78/WH78"))) } catch (_: Throwable) { }
+            .setNeutralButton("Открыть GitHub") { _, _ ->
+                try {
+                    activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/WoOh78/WH78")))
+                } catch (_: Throwable) {
+                    toast("Не удалось открыть GitHub")
+                }
             }
             .show()
     }
 
-    private fun toast(message: String) = Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
-    private fun dismiss() { dialog?.dismiss(); dialog = null }
+    private fun dismiss() {
+        dialog?.dismiss()
+        dialog = null
+        updateStatusView = null
+        updateBanner = null
+        updateBannerText = null
+        pendingRelease = null
+    }
 
-    private fun rowLp(): LinearLayout.LayoutParams = LinearLayout.LayoutParams(-1, dp(48)).apply { bottomMargin = dp(5) }
+    private fun toast(message: String) = Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
+
+    private fun isLightColor(color: Int): Boolean {
+        val luminance = 0.299 * Color.red(color) + 0.587 * Color.green(color) + 0.114 * Color.blue(color)
+        return luminance > 186
+    }
+
     private fun dp(value: Int): Int = (value * activity.resources.displayMetrics.density).toInt()
 
     companion object {
-        private const val TAG_PRIMARY_TEXT = "wh78-primary-text"
-        private const val TAG_SECONDARY_TEXT = "wh78-secondary-text"
-        private const val TAG_ROW_CARD = "wh78-row-card"
-        private const val TAG_SECTION = "wh78-section"
         private const val PREFS = "wh78_settings"
         private const val KEY_AUTOCONNECT = "auto_connect"
 

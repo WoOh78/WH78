@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.GradientDrawable
 import android.animation.ObjectAnimator
 import android.graphics.Typeface
 import android.net.Uri
@@ -82,6 +83,15 @@ class DashboardActivity : BaseActivity() {
     private lateinit var serverCard: MaterialCardView
     private lateinit var connectionCard: MaterialCardView
     private lateinit var trafficCard: MaterialCardView
+    private lateinit var trafficCardsRow: LinearLayout
+    private lateinit var speedCard: MaterialCardView
+    private lateinit var trafficRatioContainer: LinearLayout
+    private lateinit var trafficRatioRx: View
+    private lateinit var trafficRatioTx: View
+    private lateinit var downloadSpeedValue: TextView
+    private lateinit var uploadSpeedValue: TextView
+    private lateinit var refreshServicesButton: TextView
+    private lateinit var servicesHeaderRow: View
     private lateinit var serviceSection: TextView
     private lateinit var serviceRow1: View
     private lateinit var bottomNav: BottomNavigationView
@@ -102,6 +112,10 @@ class DashboardActivity : BaseActivity() {
     private var serverLatencyJob: Job? = null
     private var serviceTestJobs = mutableMapOf<String, Job>()
     private val successfulServices = mutableSetOf<String>()
+    private val serviceLatencies = mutableMapOf<String, Long>()
+    private var lastTrafficRx: Long? = null
+    private var lastTrafficTx: Long? = null
+    private var lastTrafficSampleElapsed = 0L
     private var activeTunnel: ObservableTunnel? = null
     private var egressTunnelName: String? = null
     private var egressCountry: String? = null
@@ -276,6 +290,15 @@ class DashboardActivity : BaseActivity() {
         serverCard = findViewById(R.id.server_card)
         connectionCard = findViewById(R.id.connection_card)
         trafficCard = findViewById(R.id.traffic_card)
+        trafficCardsRow = findViewById(R.id.traffic_cards_row)
+        speedCard = findViewById(R.id.speed_card)
+        trafficRatioContainer = findViewById(R.id.traffic_ratio_container)
+        trafficRatioRx = findViewById(R.id.traffic_ratio_rx)
+        trafficRatioTx = findViewById(R.id.traffic_ratio_tx)
+        downloadSpeedValue = findViewById(R.id.download_speed_value)
+        uploadSpeedValue = findViewById(R.id.upload_speed_value)
+        refreshServicesButton = findViewById(R.id.refresh_services_button)
+        servicesHeaderRow = findViewById(R.id.services_header_row)
         serviceSection = findViewById(R.id.section_quick_actions)
         serviceRow1 = findViewById(R.id.quick_services_row1)
         bottomNav = findViewById(R.id.bottom_navigation)
@@ -301,11 +324,12 @@ class DashboardActivity : BaseActivity() {
         findViewById<View>(R.id.quick_instagram_card).setOnClickListener { runServiceTest(ServiceLatencyResolver.INSTAGRAM) }
         findViewById<View>(R.id.quick_whatsapp_card).setOnClickListener { runServiceTest(ServiceLatencyResolver.WHATSAPP) }
         findViewById<View>(R.id.quick_telegram_card).setOnClickListener { runServiceTest(ServiceLatencyResolver.TELEGRAM) }
+        refreshServicesButton.setOnClickListener { runAllServiceTests() }
         serverCard.setOnClickListener { runServerLatencyTest(force = true) }
         trafficCard.isClickable = true
         trafficCard.isFocusable = true
-        trafficCard.contentDescription = "Трафик. Нажмите, чтобы открыть историю"
-        trafficCard.setOnClickListener { showTrafficHistoryDialog() }
+        trafficCard.contentDescription = "Статистика трафика. Нажмите, чтобы открыть подробный отчёт"
+        trafficCard.setOnClickListener { startActivity(Intent(this, TrafficHistoryActivity::class.java)) }
         connectButton.setOnClickListener {
             val tunnel = activeTunnel
             if (tunnel == null) {
@@ -637,6 +661,12 @@ class DashboardActivity : BaseActivity() {
         findViewById<TextView>(R.id.instagram_ping).text = "—"
         findViewById<TextView>(R.id.whatsapp_ping).text = "—"
         findViewById<TextView>(R.id.telegram_ping).text = "—"
+        serviceLatencies.clear()
+        if (::refreshServicesButton.isInitialized) {
+            refreshServicesButton.text = "↻ Обновить"
+            refreshServicesButton.isEnabled = true
+            refreshServicesButton.alpha = 1f
+        }
     }
 
     private fun startServerLatencyDetection(tunnel: ObservableTunnel) {
@@ -674,6 +704,7 @@ class DashboardActivity : BaseActivity() {
         }
         serviceTestJobs[service.id]?.cancel()
         successfulServices.remove(service.id)
+        serviceLatencies.remove(service.id)
         setServiceCardBackground(service.id, false)
         val pingView = findViewById<TextView>(service.pingViewId)
         pingView.text = "Проверка…"
@@ -681,10 +712,50 @@ class DashboardActivity : BaseActivity() {
             val latency = withContext(Dispatchers.IO) { ServiceLatencyResolver.resolve(this@DashboardActivity, service) }
             if (activeTunnel?.name == tunnel.name && tunnel.state == Tunnel.State.UP) {
                 val success = latency != null
-                if (success) successfulServices.add(service.id) else successfulServices.remove(service.id)
+                if (success) {
+                    successfulServices.add(service.id)
+                    serviceLatencies[service.id] = latency!!
+                } else {
+                    successfulServices.remove(service.id)
+                    serviceLatencies.remove(service.id)
+                }
                 pingView.text = latency?.let { "${it} мс" } ?: "Нет связи"
+                pingView.contentDescription = latency?.let {
+                    val state = when {
+                        it < 300L -> "быстрый отклик"
+                        it <= 1000L -> "нормальный отклик"
+                        else -> "медленный отклик"
+                    }
+                    "${service.name}: $state, $it миллисекунд"
+                } ?: "${service.name}: нет связи"
                 setServiceCardBackground(service.id, success)
             }
+        }
+    }
+
+    private fun runAllServiceTests() {
+        val tunnel = activeTunnel
+        if (tunnel == null || tunnel.state != Tunnel.State.UP ||
+            tunnel.connectionStatus != ObservableTunnel.ConnectionStatus.CONNECTED) {
+            Toast.makeText(this, "Сначала подключите VPN", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        refreshServicesButton.isEnabled = false
+        refreshServicesButton.alpha = 0.65f
+        refreshServicesButton.text = "↻ Проверяем…"
+        runServerLatencyTest(force = false, tunnel = tunnel)
+        listOf(
+            ServiceLatencyResolver.YOUTUBE,
+            ServiceLatencyResolver.INSTAGRAM,
+            ServiceLatencyResolver.WHATSAPP,
+            ServiceLatencyResolver.TELEGRAM
+        ).forEach(::runServiceTest)
+
+        lifecycleScope.launch {
+            while (serviceTestJobs.values.any { it.isActive }) delay(100)
+            refreshServicesButton.text = "↻ Обновить"
+            refreshServicesButton.isEnabled = true
         }
     }
 
@@ -737,6 +808,11 @@ class DashboardActivity : BaseActivity() {
             rxValue.text = "—"
             txValue.text = "—"
             totalValue.text = "—"
+            downloadSpeedValue.text = "—"
+            uploadSpeedValue.text = "—"
+            lastTrafficRx = null
+            lastTrafficTx = null
+            lastTrafficSampleElapsed = 0L
             connectButton.text = "Добавить профиль"
             connectButton.isEnabled = true
             addProfileButton.visibility = View.GONE
@@ -744,6 +820,7 @@ class DashboardActivity : BaseActivity() {
             setDiagnosticsVisibility(false)
             successfulServices.clear()
             resetServiceCardBackgrounds()
+            applyConnectButtonStyle(currentPalette())
             return
         }
 
@@ -825,6 +902,7 @@ class DashboardActivity : BaseActivity() {
                 showStats(tunnel)
             }
         }
+        applyConnectButtonStyle(currentPalette())
     }
 
     private fun startProfileExpiryRefresh(tunnelName: String) {
@@ -962,8 +1040,10 @@ class DashboardActivity : BaseActivity() {
 
     private fun setDiagnosticsVisibility(visible: Boolean) {
         val visibility = if (visible) View.VISIBLE else View.GONE
-        trafficCard.visibility = visibility
+        trafficCardsRow.visibility = visibility
+        servicesHeaderRow.visibility = visibility
         serviceSection.visibility = visibility
+        refreshServicesButton.visibility = visibility
         serviceRow1.visibility = visibility
     }
 
@@ -989,15 +1069,52 @@ class DashboardActivity : BaseActivity() {
             val statistics = tunnel.getStatisticsAsync()
             val rx = statistics.totalRx()
             val tx = statistics.totalTx()
-            rxValue.text = formatTraffic(rx)
-            txValue.text = formatTraffic(tx)
-            totalValue.text = formatTraffic(rx + tx)
             historyStore.record(tunnel.name, rx, tx)
+            val today = historyStore.today()
+            rxValue.text = formatTraffic(today.rxBytes)
+            txValue.text = formatTraffic(today.txBytes)
+            totalValue.text = formatTraffic(today.totalBytes)
+            updateTrafficRatio(today.rxBytes, today.txBytes)
+            updateCurrentSpeed(
+                rx,
+                tx,
+                tunnel.state == Tunnel.State.UP &&
+                    tunnel.connectionStatus == ObservableTunnel.ConnectionStatus.CONNECTED
+            )
         } catch (_: Throwable) {
-            rxValue.text = "0 Б"
-            txValue.text = "0 Б"
-            totalValue.text = "0 Б"
+            rxValue.text = "—"
+            txValue.text = "—"
+            totalValue.text = "—"
+            updateTrafficRatio(0L, 0L)
+            downloadSpeedValue.text = "—"
+            uploadSpeedValue.text = "—"
+            lastTrafficRx = null
+            lastTrafficTx = null
+            lastTrafficSampleElapsed = 0L
         }
+    }
+
+    private fun updateCurrentSpeed(rx: Long, tx: Long, connected: Boolean) {
+        val now = SystemClock.elapsedRealtime()
+        val previousRx = lastTrafficRx
+        val previousTx = lastTrafficTx
+        val elapsed = now - lastTrafficSampleElapsed
+        if (!connected) {
+            downloadSpeedValue.text = "0 Б/с"
+            uploadSpeedValue.text = "0 Б/с"
+        } else if (previousRx != null && previousTx != null && elapsed in 250L..5000L &&
+            rx >= previousRx && tx >= previousTx) {
+            val down = ((rx - previousRx).toDouble() * 1000.0 / elapsed).toLong()
+            val up = ((tx - previousTx).toDouble() * 1000.0 / elapsed).toLong()
+            downloadSpeedValue.text = "${formatTraffic(down)}/с"
+            uploadSpeedValue.text = "${formatTraffic(up)}/с"
+        } else {
+            downloadSpeedValue.text = "0 Б/с"
+            uploadSpeedValue.text = "0 Б/с"
+        }
+        lastTrafficRx = rx
+        lastTrafficTx = tx
+        lastTrafficSampleElapsed = now
     }
 
     private fun openConnectionSettings() {
@@ -1366,6 +1483,7 @@ class DashboardActivity : BaseActivity() {
     private fun currentPalette(): DashboardPalette = DashboardPalette.forTheme(lastTheme)
 
     private fun resetServiceCardBackgrounds() {
+        serviceLatencies.clear()
         listOf(
             ServiceLatencyResolver.YOUTUBE.id, ServiceLatencyResolver.INSTAGRAM.id,
             ServiceLatencyResolver.WHATSAPP.id, ServiceLatencyResolver.TELEGRAM.id
@@ -1380,21 +1498,68 @@ class DashboardActivity : BaseActivity() {
             "telegram" -> R.id.quick_telegram_card
             else -> return
         }
+        val pingId = when (serviceId) {
+            "youtube" -> R.id.youtube_ping
+            "instagram" -> R.id.instagram_ping
+            "whatsapp" -> R.id.whatsapp_ping
+            "telegram" -> R.id.telegram_ping
+            else -> return
+        }
         val card = findViewById<MaterialCardView>(cardId)
+        val ping = findViewById<TextView>(pingId)
         val p = currentPalette()
-        val isDarkTheme = lastTheme != AppTheme.LIGHT
-        if (success && isDarkTheme) {
-            card.setCardBackgroundColor(p.surface2)
-            card.strokeWidth = dp(2)
-            card.strokeColor = Color.argb(190, Color.red(p.positive), Color.green(p.positive), Color.blue(p.positive))
-        } else if (success) {
-            card.setCardBackgroundColor(Color.rgb(232, 247, 237))
-            card.strokeWidth = dp(1)
-            card.strokeColor = p.outline
+        val latency = serviceLatencies[serviceId]
+        val normal = if (lastTheme == AppTheme.LIGHT) {
+            Color.rgb(43, 119, 184)
         } else {
-            card.setCardBackgroundColor(p.surface2)
-            card.strokeWidth = dp(1)
-            card.strokeColor = p.outline
+            Color.rgb(91, 174, 226)
+        }
+        val warning = Color.rgb(245, 180, 54)
+        val stateColor = when {
+            !success || latency == null -> p.outline
+            latency < 300L -> p.positive
+            latency <= 1000L -> normal
+            else -> warning
+        }
+        val tintedBase = when {
+            !success || latency == null -> p.surface2
+            latency < 300L && lastTheme == AppTheme.LIGHT -> Color.rgb(232, 247, 237)
+            latency <= 1000L && lastTheme == AppTheme.LIGHT -> Color.rgb(232, 244, 253)
+            latency > 1000L && lastTheme == AppTheme.LIGHT -> Color.rgb(255, 247, 224)
+            latency > 1000L -> blendColor(p.surface2, warning, 0.16f)
+            latency < 300L -> blendColor(p.surface2, p.positive, 0.10f)
+            else -> blendColor(p.surface2, normal, 0.10f)
+        }
+        card.setCardBackgroundColor(tintedBase)
+        card.strokeWidth = dp(if (success) 2 else 1)
+        card.strokeColor = if (success) stateColor else p.outline
+        ping.setTextColor(if (success) stateColor else p.secondaryText)
+    }
+
+    private fun blendColor(base: Int, overlay: Int, fraction: Float): Int {
+        val f = fraction.coerceIn(0f, 1f)
+        return Color.rgb(
+            (Color.red(base) * (1f - f) + Color.red(overlay) * f).toInt(),
+            (Color.green(base) * (1f - f) + Color.green(overlay) * f).toInt(),
+            (Color.blue(base) * (1f - f) + Color.blue(overlay) * f).toInt()
+        )
+    }
+
+    private fun applyConnectButtonStyle(p: DashboardPalette) {
+        if (!::connectButton.isInitialized) return
+        val connected = activeTunnel?.let {
+            it.state == Tunnel.State.UP &&
+                it.connectionStatus == ObservableTunnel.ConnectionStatus.CONNECTED
+        } == true
+        if (connected) {
+            connectButton.backgroundTintList = ColorStateList.valueOf(p.surface2)
+            connectButton.setTextColor(p.text)
+            connectButton.strokeWidth = dp(1)
+            connectButton.strokeColor = ColorStateList.valueOf(p.outline)
+        } else {
+            connectButton.backgroundTintList = ColorStateList.valueOf(p.accent)
+            connectButton.setTextColor(p.accentText)
+            connectButton.strokeWidth = 0
         }
     }
 
@@ -1414,6 +1579,9 @@ class DashboardActivity : BaseActivity() {
         connectionCard.strokeWidth = 0
         trafficCard.setCardBackgroundColor(p.surface)
         trafficCard.strokeWidth = 0
+        speedCard.setCardBackgroundColor(p.surface)
+        speedCard.strokeWidth = 0
+        applyTrafficRatioPalette(p)
         listOf(
             ServiceLatencyResolver.YOUTUBE, ServiceLatencyResolver.INSTAGRAM,
             ServiceLatencyResolver.WHATSAPP, ServiceLatencyResolver.TELEGRAM
@@ -1440,34 +1608,42 @@ class DashboardActivity : BaseActivity() {
         bottomNav.itemRippleColor = android.content.res.ColorStateList.valueOf(
             Color.argb(40, Color.red(p.accent), Color.green(p.accent), Color.blue(p.accent))
         )
-        connectButton.backgroundTintList = android.content.res.ColorStateList.valueOf(p.accent)
-        connectButton.setTextColor(p.accentText)
+        applyConnectButtonStyle(p)
+        refreshServicesButton.setTextColor(p.accent)
+        refreshServicesButton.alpha = if (refreshServicesButton.isEnabled) 1f else 0.65f
         findViewById<View>(R.id.feedback_button).let { (it as TextView).setTextColor(p.text) }
         findViewById<View>(R.id.share_button).let { (it as TextView).setTextColor(p.text) }
         if (::settingsButton.isInitialized) {
             settingsButton.imageTintList = ColorStateList.valueOf(p.text)
         }
         val textIds = intArrayOf(R.id.brand_title, R.id.status_title, R.id.dashboard_title, R.id.active_time_main,
-            R.id.rx_value, R.id.tx_value, R.id.total_value, R.id.section_traffic)
+            R.id.rx_value, R.id.tx_value, R.id.total_value, R.id.section_traffic,
+            R.id.speed_card_title, R.id.download_speed_value, R.id.upload_speed_value)
         textIds.forEach { findViewById<TextView>(it).setTextColor(p.text) }
+        findViewById<TextView>(R.id.download_speed_value).setTextColor(p.positive)
+        findViewById<TextView>(R.id.upload_speed_value).setTextColor(Color.rgb(245, 180, 54))
         findViewById<TextView>(R.id.brand_build).setTextColor(p.accent)
         val secondaryIds = intArrayOf(R.id.brand_subtitle, R.id.status_subtitle, R.id.rx_label,
-            R.id.tx_label, R.id.total_label)
+            R.id.tx_label, R.id.total_label, R.id.download_speed_label, R.id.upload_speed_label, R.id.history_hint)
         secondaryIds.forEach { findViewById<TextView>(it).setTextColor(p.secondaryText) }
         listOf(R.id.youtube_button, R.id.instagram_button, R.id.whatsapp_button, R.id.telegram_button).forEach { viewId ->
             findViewById<TextView>(viewId).setTextColor(p.text)
         }
-        findViewById<TextView>(R.id.youtube_ping).setTextColor(p.secondaryText)
-        findViewById<TextView>(R.id.instagram_ping).setTextColor(p.secondaryText)
-        findViewById<TextView>(R.id.whatsapp_ping).setTextColor(p.secondaryText)
-        findViewById<TextView>(R.id.telegram_ping).setTextColor(p.secondaryText)
+        findViewById<TextView>(R.id.history_hint).setTextColor(p.accent)
         listOf(R.id.feedback_button, R.id.share_button).forEach { viewId ->
             findViewById<TextView>(viewId).compoundDrawableTintList = android.content.res.ColorStateList.valueOf(p.text)
         }
-        listOf(R.id.rx_label, R.id.tx_label, R.id.total_label).forEach { viewId ->
-            findViewById<TextView>(viewId).compoundDrawableTintList = android.content.res.ColorStateList.valueOf(p.accent)
+        listOf(R.id.rx_label, R.id.download_speed_label).forEach { viewId ->
+            findViewById<TextView>(viewId).compoundDrawableTintList = ColorStateList.valueOf(p.positive)
             findViewById<TextView>(viewId).setTextColor(p.secondaryText)
         }
+        val uploadAccent = Color.rgb(245, 180, 54)
+        listOf(R.id.tx_label, R.id.upload_speed_label).forEach { viewId ->
+            findViewById<TextView>(viewId).compoundDrawableTintList = ColorStateList.valueOf(uploadAccent)
+            findViewById<TextView>(viewId).setTextColor(p.secondaryText)
+        }
+        findViewById<TextView>(R.id.total_label).setTextColor(p.secondaryText)
+        findViewById<TextView>(R.id.total_label).compoundDrawableTintList = ColorStateList.valueOf(p.positive)
         findViewById<TextView>(R.id.server_country).setTextColor(p.secondaryText)
         findViewById<TextView>(R.id.server_ping).setTextColor(p.secondaryText)
         findViewById<TextView>(R.id.profile_label).setTextColor(p.secondaryText)
@@ -1480,6 +1656,38 @@ class DashboardActivity : BaseActivity() {
         findViewById<TextView>(R.id.section_quick_actions).let {
             it.setTextColor(p.text)
             it.compoundDrawableTintList = android.content.res.ColorStateList.valueOf(p.accent)
+        }
+    }
+
+    private fun updateTrafficRatio(rxBytes: Long, txBytes: Long) {
+        if (!::trafficRatioContainer.isInitialized) return
+        val rx = rxBytes.coerceAtLeast(0L).toDouble()
+        val tx = txBytes.coerceAtLeast(0L).toDouble()
+        val total = rx + tx
+        trafficRatioContainer.visibility = if (total > 0.0) View.VISIBLE else View.INVISIBLE
+        val rxParams = trafficRatioRx.layoutParams as LinearLayout.LayoutParams
+        val txParams = trafficRatioTx.layoutParams as LinearLayout.LayoutParams
+        rxParams.width = 0
+        txParams.width = 0
+        rxParams.weight = if (total > 0.0) (rx / total).toFloat() else 1f
+        txParams.weight = if (total > 0.0) (tx / total).toFloat() else 1f
+        trafficRatioRx.layoutParams = rxParams
+        trafficRatioTx.layoutParams = txParams
+    }
+
+    private fun applyTrafficRatioPalette(p: DashboardPalette) {
+        val amber = Color.rgb(245, 180, 54)
+        trafficRatioContainer.background = GradientDrawable().apply {
+            cornerRadius = dp(4).toFloat()
+            setColor(p.surface2)
+        }
+        trafficRatioRx.background = GradientDrawable().apply {
+            cornerRadius = dp(4).toFloat()
+            setColor(p.positive)
+        }
+        trafficRatioTx.background = GradientDrawable().apply {
+            cornerRadius = dp(4).toFloat()
+            setColor(amber)
         }
     }
 

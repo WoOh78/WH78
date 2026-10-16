@@ -152,7 +152,12 @@
         <meta-data
             android:name="android.content.APP_RESTRICTIONS"
             android:resource="@xml/app_restrictions" />
-    </application>
+            <activity
+            android:name="org.amnezia.awg.dashboard.TrafficHistoryActivity"
+            android:exported="false"
+            android:theme="@style/AppTheme.NoActionBar" />
+
+</application>
 
     <queries>
         <intent>
