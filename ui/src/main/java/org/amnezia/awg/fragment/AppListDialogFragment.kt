@@ -10,9 +10,14 @@ import android.content.DialogInterface
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.content.pm.PackageManager.PackageInfoFlags
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
+import android.view.Gravity
 import android.view.LayoutInflater
+import android.view.View
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.os.bundleOf
@@ -20,6 +25,7 @@ import androidx.databinding.Observable
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.setFragmentResult
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
 import org.amnezia.awg.BR
@@ -109,17 +115,38 @@ class AppListDialogFragment : DialogFragment() {
 
         binding.fragment = this
         binding.appData = appData
-        binding.root.findViewById<android.view.View>(R.id.app_picker_done).setOnClickListener {
+        binding.root.findViewById<View>(R.id.app_picker_back).setOnClickListener {
+            // Keep the original dismiss semantics: onDismiss saves the current selection
+            // only after the app list has finished loading.
+            dismiss()
+        }
+        binding.root.findViewById<View>(R.id.app_picker_done).setOnClickListener {
             setSelectionAndDismiss()
         }
         loadData()
 
         val dialog = alertDialogBuilder.create()
+        dialog.window?.setWindowAnimations(R.style.Wh78FullPageDialogAnimation)
         dialog.setOnShowListener {
-            dialog.window?.setLayout(
-                (resources.displayMetrics.widthPixels - (resources.displayMetrics.density * 32f).toInt()).coerceAtLeast((resources.displayMetrics.density * 280f).toInt()),
-                (resources.displayMetrics.heightPixels * 0.82f).toInt()
+            val window = dialog.window ?: return@setOnShowListener
+            val surface = MaterialColors.getColor(
+                themedContext,
+                com.google.android.material.R.attr.colorSurface,
+                Color.BLACK
             )
+            window.setBackgroundDrawable(ColorDrawable(surface))
+            window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+            window.setGravity(Gravity.FILL)
+            window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
+            window.statusBarColor = surface
+            window.navigationBarColor = surface
+            window.setWindowAnimations(R.style.Wh78FullPageDialogAnimation)
+            window.decorView.systemUiVisibility = if (org.amnezia.awg.Application.get().currentAppThemeKey.lowercase() == "light") {
+                View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+            } else {
+                0
+            }
         }
         return dialog
     }

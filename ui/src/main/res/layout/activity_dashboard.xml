@@ -34,16 +34,19 @@
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:baselineAligned="true"
+                        android:baselineAligned="false"
+                        android:gravity="center_vertical"
                         android:orientation="horizontal">
                         <TextView
                             android:id="@+id/brand_title"
                             android:fontFamily="sans-serif"
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="WoOh78"
-                            android:textSize="24sp"
-                            android:textStyle="bold" />
+                            android:layout_height="32dp"
+                            android:gravity="center_vertical"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="WH78 — переключить тему оформления"
+                            android:text=""
+                            android:textSize="1sp" />
                         <TextView
                             android:id="@+id/brand_build"
                             android:fontFamily="sans-serif"
@@ -53,7 +56,8 @@
                             android:layout_marginBottom="2dp"
                             android:text="b1"
                             android:textSize="11sp"
-                            android:textStyle="bold" />
+                            android:textStyle="bold"
+                            android:visibility="gone" />
                     </LinearLayout>
                     <TextView
                         android:id="@+id/brand_subtitle"
@@ -127,6 +131,7 @@
                             android:paddingEnd="20dp"
                             android:paddingBottom="11dp">
                             <LinearLayout
+                                android:id="@+id/status_header_row"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:gravity="center_vertical">
@@ -137,8 +142,10 @@
                                     android:layout_height="34dp"
                                     android:gravity="center"
                                     android:text="●"
-                                    android:textSize="21sp" />
+                                    android:textSize="21sp"
+                                    android:visibility="gone" />
                                 <LinearLayout
+                                    android:id="@+id/status_text_container"
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
@@ -163,6 +170,7 @@
                             </LinearLayout>
 
                             <LinearLayout
+                                android:id="@+id/profile_meta_group"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="6dp"
@@ -241,6 +249,7 @@
                             </LinearLayout>
 
                             <LinearLayout
+                                android:id="@+id/server_meta_group"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="6dp"
@@ -364,62 +373,67 @@
                                 <LinearLayout
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginTop="8dp"
-                                    android:gravity="top"
-                                    android:orientation="horizontal">
+                                    android:layout_marginTop="10dp"
+                                    android:gravity="center_vertical"
+                                    android:orientation="vertical">
                                     <LinearLayout
-                                        android:layout_width="0dp"
+                                        android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
-                                        android:layout_weight="1"
-                                        android:orientation="vertical">
-                                        <TextView
-                                            android:id="@+id/download_speed_value"
-                                            android:layout_width="match_parent"
-                                            android:layout_height="wrap_content"
-                                            android:maxLines="1"
-                                            android:ellipsize="end"
-                                            android:text="0 Б/с"
-                                            android:textSize="18sp"
-                                            android:textStyle="bold" />
+                                        android:gravity="center_vertical"
+                                        android:orientation="horizontal">
                                         <TextView
                                             android:id="@+id/download_speed_label"
                                             android:layout_width="wrap_content"
                                             android:layout_height="wrap_content"
-                                            android:layout_marginTop="3dp"
                                             android:drawableStart="@drawable/ic_download"
-                                            android:drawablePadding="3dp"
+                                            android:drawablePadding="4dp"
+                                            android:includeFontPadding="false"
+                                            android:maxLines="1"
                                             android:text="Приём"
-                                            android:textSize="9sp" />
-                                    </LinearLayout>
-                                    <View
-                                        android:layout_width="1dp"
-                                        android:layout_height="38dp"
-                                        android:alpha="0.14"
-                                        android:background="?android:attr/textColorPrimary" />
-                                    <LinearLayout
-                                        android:layout_width="0dp"
-                                        android:layout_height="wrap_content"
-                                        android:layout_weight="1"
-                                        android:paddingStart="8dp"
-                                        android:orientation="vertical">
+                                            android:textSize="15sp"
+                                            android:textStyle="bold" />
                                         <TextView
-                                            android:id="@+id/upload_speed_value"
-                                            android:layout_width="match_parent"
+                                            android:id="@+id/download_speed_value"
+                                            android:layout_width="0dp"
                                             android:layout_height="wrap_content"
+                                            android:layout_weight="1"
+                                            android:gravity="end|center_vertical"
+                                            android:includeFontPadding="false"
                                             android:maxLines="1"
                                             android:ellipsize="end"
                                             android:text="0 Б/с"
-                                            android:textSize="18sp"
+                                            android:textSize="15sp"
                                             android:textStyle="bold" />
+                                    </LinearLayout>
+                                    <LinearLayout
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="9dp"
+                                        android:gravity="center_vertical"
+                                        android:orientation="horizontal">
                                         <TextView
                                             android:id="@+id/upload_speed_label"
                                             android:layout_width="wrap_content"
                                             android:layout_height="wrap_content"
-                                            android:layout_marginTop="3dp"
                                             android:drawableStart="@drawable/ic_upload"
-                                            android:drawablePadding="3dp"
+                                            android:drawablePadding="4dp"
+                                            android:includeFontPadding="false"
+                                            android:maxLines="1"
                                             android:text="Отдача"
-                                            android:textSize="9sp" />
+                                            android:textSize="15sp"
+                                            android:textStyle="bold" />
+                                        <TextView
+                                            android:id="@+id/upload_speed_value"
+                                            android:layout_width="0dp"
+                                            android:layout_height="wrap_content"
+                                            android:layout_weight="1"
+                                            android:gravity="end|center_vertical"
+                                            android:includeFontPadding="false"
+                                            android:maxLines="1"
+                                            android:ellipsize="end"
+                                            android:text="0 Б/с"
+                                            android:textSize="15sp"
+                                            android:textStyle="bold" />
                                     </LinearLayout>
                                 </LinearLayout>
                             </LinearLayout>
@@ -635,12 +649,12 @@
                                 <TextView
                                     android:id="@+id/youtube_button"
                         android:fontFamily="sans-serif"
-                                    android:layout_width="wrap_content"
+                                    android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
-                                    android:drawableTop="@drawable/ic_youtube"
-                                    android:drawablePadding="3dp"
-                                    android:text="YouTube"
-                                    android:textSize="10sp"
+                                    android:gravity="center"
+                                    android:includeFontPadding="false"
+                                    android:text="YT"
+                                    android:textSize="15sp"
                                     android:textStyle="bold" />
                                 <TextView
                                     android:id="@+id/youtube_ping"
@@ -651,7 +665,17 @@
                                     android:includeFontPadding="false"
                                     android:maxLines="1"
                                     android:text="—"
-                                    android:textSize="9sp" />
+                                    android:textSize="10sp" />
+                                <TextView
+                                    android:id="@+id/youtube_state"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:fontFamily="sans-serif"
+                                    android:includeFontPadding="false"
+                                    android:maxLines="1"
+                                    android:text="—"
+                                    android:textSize="10sp" />
                             </LinearLayout>
                         </com.google.android.material.card.MaterialCardView>
 
@@ -675,12 +699,12 @@
                                 <TextView
                                     android:id="@+id/instagram_button"
                         android:fontFamily="sans-serif"
-                                    android:layout_width="wrap_content"
+                                    android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
-                                    android:drawableTop="@drawable/ic_instagram"
-                                    android:drawablePadding="3dp"
-                                    android:text="Instagram"
-                                    android:textSize="10sp"
+                                    android:gravity="center"
+                                    android:includeFontPadding="false"
+                                    android:text="IG"
+                                    android:textSize="15sp"
                                     android:textStyle="bold" />
                                 <TextView
                                     android:id="@+id/instagram_ping"
@@ -691,7 +715,17 @@
                                     android:includeFontPadding="false"
                                     android:maxLines="1"
                                     android:text="—"
-                                    android:textSize="9sp" />
+                                    android:textSize="10sp" />
+                                <TextView
+                                    android:id="@+id/instagram_state"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:fontFamily="sans-serif"
+                                    android:includeFontPadding="false"
+                                    android:maxLines="1"
+                                    android:text="—"
+                                    android:textSize="10sp" />
                             </LinearLayout>
                         </com.google.android.material.card.MaterialCardView>
                         <com.google.android.material.card.MaterialCardView
@@ -714,12 +748,12 @@
                                 <TextView
                                     android:id="@+id/whatsapp_button"
                         android:fontFamily="sans-serif"
-                                    android:layout_width="wrap_content"
+                                    android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
-                                    android:drawableTop="@drawable/ic_whatsapp"
-                                    android:drawablePadding="3dp"
-                                    android:text="WhatsApp"
-                                    android:textSize="10sp"
+                                    android:gravity="center"
+                                    android:includeFontPadding="false"
+                                    android:text="WA"
+                                    android:textSize="15sp"
                                     android:textStyle="bold" />
                                 <TextView
                                     android:id="@+id/whatsapp_ping"
@@ -730,7 +764,17 @@
                                     android:includeFontPadding="false"
                                     android:maxLines="1"
                                     android:text="—"
-                                    android:textSize="9sp" />
+                                    android:textSize="10sp" />
+                                <TextView
+                                    android:id="@+id/whatsapp_state"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:fontFamily="sans-serif"
+                                    android:includeFontPadding="false"
+                                    android:maxLines="1"
+                                    android:text="—"
+                                    android:textSize="10sp" />
                             </LinearLayout>
                         </com.google.android.material.card.MaterialCardView>
 
@@ -754,12 +798,12 @@
                                 <TextView
                                     android:id="@+id/telegram_button"
                         android:fontFamily="sans-serif"
-                                    android:layout_width="wrap_content"
+                                    android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
-                                    android:drawableTop="@drawable/ic_telegram"
-                                    android:drawablePadding="3dp"
-                                    android:text="Telegram"
-                                    android:textSize="10sp"
+                                    android:gravity="center"
+                                    android:includeFontPadding="false"
+                                    android:text="TG"
+                                    android:textSize="15sp"
                                     android:textStyle="bold" />
                                 <TextView
                                     android:id="@+id/telegram_ping"
@@ -770,7 +814,17 @@
                                     android:includeFontPadding="false"
                                     android:maxLines="1"
                                     android:text="—"
-                                    android:textSize="9sp" />
+                                    android:textSize="10sp" />
+                                <TextView
+                                    android:id="@+id/telegram_state"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:fontFamily="sans-serif"
+                                    android:includeFontPadding="false"
+                                    android:maxLines="1"
+                                    android:text="—"
+                                    android:textSize="10sp" />
                             </LinearLayout>
                         </com.google.android.material.card.MaterialCardView>
                     </LinearLayout>
@@ -793,7 +847,7 @@
                 android:paddingTop="18dp"
                 android:paddingEnd="20dp"
                 android:paddingBottom="12dp"
-                android:text="Список туннелей"
+                android:text="Список профилей"
                 android:textSize="25sp"
                 android:textStyle="normal" />
             <FrameLayout

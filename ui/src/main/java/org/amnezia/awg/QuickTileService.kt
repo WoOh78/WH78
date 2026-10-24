@@ -65,7 +65,7 @@ class QuickTileService : TileService() {
 
     private fun refreshIconsForTheme() {
         val night = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-        val iconRes = if (night) R.drawable.wh78_qs_mono_dark_b18 else R.drawable.wh78_qs_mono_light_b18
+        val iconRes = if (night) R.drawable.wh78_qs_mono_dark_clean else R.drawable.wh78_qs_mono_light_clean
         val icon = Icon.createWithResource(this, iconRes)
         iconOn = icon
         iconOff = icon

@@ -2,6 +2,15 @@
 <resources>
 
     <style name="MyVpnLegacyPremiumDarkTheme" parent="AppTheme">
+        <!-- Explicit Material 3 surface roles keep dialogs aligned with the selected WH78 palette. -->
+        <item name="colorSurfaceContainerLowest">#080B0D</item>
+        <item name="colorSurfaceContainerLow">#101519</item>
+        <item name="colorSurfaceContainer">#14191D</item>
+        <item name="colorSurfaceContainerHigh">#1C2328</item>
+        <item name="colorSurfaceContainerHighest">#252E34</item>
+        <item name="colorSurfaceDim">#0A0D10</item>
+        <item name="colorSurfaceBright">#344047</item>
+        <item name="colorOutlineVariant">#344640</item>
         <item name="colorPrimary">#4DE2A0</item>
         <item name="colorOnPrimary">#071F16</item>
         <item name="colorPrimaryContainer">#1C2328</item>
@@ -32,6 +41,15 @@
     </style>
 
     <style name="MyVpnLegacyLightTheme" parent="AppTheme">
+        <!-- Explicit Material 3 surface roles keep dialogs aligned with the selected WH78 palette. -->
+        <item name="colorSurfaceContainerLowest">#FFFFFF</item>
+        <item name="colorSurfaceContainerLow">#FFFFFF</item>
+        <item name="colorSurfaceContainer">#F6F8F9</item>
+        <item name="colorSurfaceContainerHigh">#ECF0F3</item>
+        <item name="colorSurfaceContainerHighest">#E4E9EC</item>
+        <item name="colorSurfaceDim">#DCE2E6</item>
+        <item name="colorSurfaceBright">#FFFFFF</item>
+        <item name="colorOutlineVariant">#CFD6DA</item>
         <item name="colorPrimary">#188E5B</item>
         <item name="colorOnPrimary">#FFFFFF</item>
         <item name="colorPrimaryContainer">#ECF0F3</item>
@@ -62,6 +80,15 @@
     </style>
 
     <style name="MyVpnLegacyBlueTheme" parent="AppTheme">
+        <!-- Explicit Material 3 surface roles keep dialogs aligned with the selected WH78 palette. -->
+        <item name="colorSurfaceContainerLowest">#080F1C</item>
+        <item name="colorSurfaceContainerLow">#0B1526</item>
+        <item name="colorSurfaceContainer">#0F1B2F</item>
+        <item name="colorSurfaceContainerHigh">#152740</item>
+        <item name="colorSurfaceContainerHighest">#203654</item>
+        <item name="colorSurfaceDim">#080F1C</item>
+        <item name="colorSurfaceBright">#304766</item>
+        <item name="colorOutlineVariant">#334E6F</item>
         <item name="colorPrimary">#59ABFF</item>
         <item name="colorOnPrimary">#071C31</item>
         <item name="colorPrimaryContainer">#152740</item>
@@ -92,6 +119,15 @@
     </style>
 
     <style name="MyVpnLegacyCyberpunkTheme" parent="AppTheme">
+        <!-- Explicit Material 3 surface roles keep dialogs aligned with the selected WH78 palette. -->
+        <item name="colorSurfaceContainerLowest">#0D0712</item>
+        <item name="colorSurfaceContainerLow">#15091D</item>
+        <item name="colorSurfaceContainer">#1C0D26</item>
+        <item name="colorSurfaceContainerHigh">#2A1235</item>
+        <item name="colorSurfaceContainerHighest">#381747</item>
+        <item name="colorSurfaceDim">#0D0712</item>
+        <item name="colorSurfaceBright">#482256</item>
+        <item name="colorOutlineVariant">#5A2C62</item>
         <item name="colorPrimary">#FF42C7</item>
         <item name="colorOnPrimary">#300923</item>
         <item name="colorPrimaryContainer">#2A1235</item>

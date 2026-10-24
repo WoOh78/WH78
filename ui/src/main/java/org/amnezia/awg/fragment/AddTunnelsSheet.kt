@@ -4,6 +4,7 @@
  */
 package org.amnezia.awg.fragment
 
+import android.app.Dialog
 import android.content.pm.PackageManager
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
@@ -20,9 +21,16 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import org.amnezia.awg.R
+import org.amnezia.awg.dashboard.Wh78DialogTheme
 import org.amnezia.awg.util.resolveAttribute
 
 class AddTunnelsSheet : BottomSheetDialogFragment() {
+
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
+        BottomSheetDialog(Wh78DialogTheme.wrap(requireContext()), theme)
+
+    override fun onGetLayoutInflater(savedInstanceState: Bundle?): LayoutInflater =
+        super.onGetLayoutInflater(savedInstanceState).cloneInContext(Wh78DialogTheme.wrap(requireContext()))
 
     private var behavior: BottomSheetBehavior<FrameLayout>? = null
     private val bottomSheetCallback = object : BottomSheetBehavior.BottomSheetCallback() {
@@ -75,7 +83,7 @@ class AddTunnelsSheet : BottomSheetDialogFragment() {
             }
         })
         val gradientDrawable = GradientDrawable().apply {
-            setColor(requireContext().resolveAttribute(com.google.android.material.R.attr.colorSurface))
+            setColor(view.context.resolveAttribute(com.google.android.material.R.attr.colorSurface))
         }
         view.background = gradientDrawable
     }

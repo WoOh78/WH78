@@ -7,11 +7,13 @@ package org.amnezia.awg.fragment
 import android.app.Dialog
 import android.os.Bundle
 import android.view.WindowManager
+import android.view.LayoutInflater
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import org.amnezia.awg.Application
 import org.amnezia.awg.R
+import org.amnezia.awg.dashboard.Wh78DialogTheme
 import org.amnezia.awg.databinding.ConfigNamingDialogFragmentBinding
 import org.amnezia.awg.config.BadConfigException
 import org.amnezia.awg.config.Config
@@ -54,9 +56,10 @@ class ConfigNamingDialogFragment : DialogFragment() {
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val activity = requireActivity()
-        val alertDialogBuilder = MaterialAlertDialogBuilder(activity)
+        val themedContext = Wh78DialogTheme.wrap(activity)
+        val alertDialogBuilder = MaterialAlertDialogBuilder(themedContext)
         alertDialogBuilder.setTitle(R.string.import_from_qr_code)
-        binding = ConfigNamingDialogFragmentBinding.inflate(activity.layoutInflater, null, false)
+        binding = ConfigNamingDialogFragmentBinding.inflate(LayoutInflater.from(themedContext), null, false)
         binding?.apply {
             executePendingBindings()
             alertDialogBuilder.setView(root)

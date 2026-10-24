@@ -115,7 +115,7 @@
         <!-- Monochrome icon for the system-managed VPN UI; Quick Settings tile has its own icon. -->
         <service
             android:name="org.amnezia.awg.backend.GoBackend$VpnService"
-            android:icon="@drawable/wh78_qs_mono_light_b18" />
+            android:icon="@drawable/wh78_qs_mono_light_clean" />
 
         <receiver
             android:name="org.amnezia.awg.BootShutdownReceiver"
@@ -140,7 +140,7 @@
         <service
             android:name="org.amnezia.awg.QuickTileService"
             android:exported="true"
-            android:icon="@drawable/wh78_qs_mono_light_b18"
+            android:icon="@drawable/wh78_qs_mono_light_clean"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />

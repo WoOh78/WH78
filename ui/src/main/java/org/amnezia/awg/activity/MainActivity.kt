@@ -51,7 +51,7 @@ class MainActivity : BaseActivity(), FragmentManager.OnBackStackChangedListener 
         backPressedCallback?.isEnabled = backStackEntries >= 1 || intent.getBooleanExtra(EXTRA_FROM_DASHBOARD, false)
         actionBar?.let { bar ->
             if (intent.getBooleanExtra(EXTRA_FROM_DASHBOARD, false)) {
-                bar.title = "Список туннелей"
+                bar.title = "Список профилей"
                 bar.setDisplayHomeAsUpEnabled(true)
                 bar.setHomeActionContentDescription("Вернуться в WoOh78")
             } else {
@@ -67,7 +67,7 @@ class MainActivity : BaseActivity(), FragmentManager.OnBackStackChangedListener 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.main_activity)
         actionBar = supportActionBar
-        actionBar?.title = "Список туннелей"
+        actionBar?.title = "Список профилей"
         isTwoPaneLayout = findViewById<View?>(R.id.master_detail_wrapper) != null
         bottomNav = findViewById(R.id.bottom_navigation)
         applyBottomNavigationTheme()

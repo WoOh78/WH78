@@ -16,6 +16,7 @@ import android.view.View
 import android.view.MotionEvent
 import android.view.ViewGroup
 import android.view.Gravity
+import android.view.HapticFeedbackConstants
 import android.view.animation.DecelerateInterpolator
 import android.widget.TextView
 import android.widget.ImageButton
@@ -31,6 +32,7 @@ import android.text.style.StyleSpan
 import android.app.Dialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import android.net.VpnService
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -39,7 +41,6 @@ import com.google.android.material.card.MaterialCardView
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import org.amnezia.awg.Application
-import org.amnezia.awg.BuildConfig
 import org.amnezia.awg.R
 import org.amnezia.awg.activity.MainActivity
 import org.amnezia.awg.activity.BaseActivity
@@ -100,6 +101,10 @@ class DashboardActivity : BaseActivity() {
     private lateinit var tunnelListContainer: View
     private lateinit var settingsButton: ImageButton
     private var autoConnectAttempted = false
+    private var serviceIconsVisible = false
+    private var trafficCardsAligned = false
+    private var brandLogoBaseDrawable: android.graphics.drawable.Drawable? = null
+    private var brandLogoNumbersDrawable: android.graphics.drawable.Drawable? = null
 
     private enum class Page { DASHBOARD, TUNNELS }
     private var currentPage = Page.DASHBOARD
@@ -318,13 +323,14 @@ class DashboardActivity : BaseActivity() {
             }
             startActivity(Intent.createChooser(share, getString(R.string.dashboard_share_title)))
         }
-        findViewById<TextView>(R.id.brand_title).text = "WH78"
+        setupBrandLogo()
         setupSettingsButton()
         findViewById<View>(R.id.quick_youtube_card).setOnClickListener { runServiceTest(ServiceLatencyResolver.YOUTUBE) }
         findViewById<View>(R.id.quick_instagram_card).setOnClickListener { runServiceTest(ServiceLatencyResolver.INSTAGRAM) }
         findViewById<View>(R.id.quick_whatsapp_card).setOnClickListener { runServiceTest(ServiceLatencyResolver.WHATSAPP) }
         findViewById<View>(R.id.quick_telegram_card).setOnClickListener { runServiceTest(ServiceLatencyResolver.TELEGRAM) }
-        refreshServicesButton.setOnClickListener { runAllServiceTests() }
+        setupServiceRefreshGesture()
+        applyServiceIconMode()
         serverCard.setOnClickListener { runServerLatencyTest(force = true) }
         trafficCard.isClickable = true
         trafficCard.isFocusable = true
@@ -348,8 +354,7 @@ class DashboardActivity : BaseActivity() {
             }
         }
         addProfileButton.setOnClickListener { showAddProfileMenu() }
-        findViewById<TextView>(R.id.brand_title).setOnClickListener { cycleTheme() }
-        findViewById<TextView>(R.id.brand_build).text = BuildConfig.MYVPN_BUILD
+        // The branded header intentionally omits the internal build counter.
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_home -> { showDashboardPage(); true }
@@ -384,6 +389,120 @@ class DashboardActivity : BaseActivity() {
         })
     }
 
+
+    private fun setupBrandLogo() {
+        val title = findViewById<TextView>(R.id.brand_title)
+        title.text = ""
+        title.contentDescription = "WH78 — переключить тему оформления"
+        title.includeFontPadding = false
+        title.gravity = Gravity.CENTER_VERTICAL
+
+        // Two tintable masks keep the mark theme-aware while the digits 78 stay orange.
+        brandLogoBaseDrawable = ContextCompat.getDrawable(this, R.drawable.wh78_header_logo)?.mutate()
+        brandLogoNumbersDrawable = ContextCompat.getDrawable(this, R.drawable.wh78_header_logo_numbers)?.mutate()
+        val base = brandLogoBaseDrawable
+        val numbers = brandLogoNumbersDrawable
+        val logo = if (base != null && numbers != null) {
+            android.graphics.drawable.LayerDrawable(arrayOf(base, numbers))
+        } else {
+            base
+        }
+        brandLogoBaseDrawable?.setTint(currentPalette().text)
+        brandLogoNumbersDrawable?.setTint(WH78_LOGO_ORANGE)
+        logo?.setBounds(0, 0, dp(72), dp(27))
+        title.setCompoundDrawablesRelative(logo, null, null, null)
+        findViewById<TextView>(R.id.brand_build).visibility = View.GONE
+        title.setOnClickListener { cycleTheme() }
+    }
+
+    private fun setupServiceRefreshGesture() {
+        refreshServicesButton.contentDescription =
+            "Обновить проверку сервисов. Удерживайте 3 секунды, чтобы показать или скрыть значки"
+        refreshServicesButton.setOnClickListener { runAllServiceTests() }
+        var revealTriggered = false
+        val revealRunnable = Runnable {
+            revealTriggered = true
+            refreshServicesButton.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+            toggleServiceIconMode()
+        }
+        refreshServicesButton.setOnTouchListener { view, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    revealTriggered = false
+                    view.removeCallbacks(revealRunnable)
+                    view.postDelayed(revealRunnable, SERVICE_ICON_EASTER_EGG_HOLD_MS)
+                    false
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val inside = event.x >= 0f && event.y >= 0f &&
+                        event.x < view.width && event.y < view.height
+                    if (!inside && !revealTriggered) {
+                        view.removeCallbacks(revealRunnable)
+                    }
+                    false
+                }
+                MotionEvent.ACTION_UP -> {
+                    view.removeCallbacks(revealRunnable)
+                    if (revealTriggered) true else false
+                }
+                MotionEvent.ACTION_CANCEL -> {
+                    view.removeCallbacks(revealRunnable)
+                    revealTriggered = false
+                    false
+                }
+                else -> false
+            }
+        }
+    }
+
+    private fun toggleServiceIconMode() {
+        serviceIconsVisible = !serviceIconsVisible
+        val views = intArrayOf(
+            R.id.youtube_button, R.id.instagram_button, R.id.whatsapp_button, R.id.telegram_button
+        ).map { findViewById<TextView>(it) }
+        views.forEach { item ->
+            item.animate().cancel()
+            item.animate().alpha(0f).setDuration(120L).start()
+        }
+        views.firstOrNull()?.postDelayed({
+            applyServiceIconMode()
+            views.forEach { item ->
+                item.alpha = 0f
+                item.animate().alpha(1f).setDuration(180L).start()
+            }
+        }, 120L)
+    }
+
+    private fun applyServiceIconMode() {
+        val services = listOf(
+            Triple(R.id.youtube_button, "YT", R.drawable.ic_youtube),
+            Triple(R.id.instagram_button, "IG", R.drawable.ic_instagram),
+            Triple(R.id.whatsapp_button, "WA", R.drawable.ic_whatsapp),
+            Triple(R.id.telegram_button, "TG", R.drawable.ic_telegram)
+        )
+        val descriptions = mapOf(
+            R.id.youtube_button to "YouTube",
+            R.id.instagram_button to "Instagram",
+            R.id.whatsapp_button to "WhatsApp",
+            R.id.telegram_button to "Telegram"
+        )
+        services.forEach { (viewId, abbreviation, iconRes) ->
+            val item = findViewById<TextView>(viewId)
+            item.setCompoundDrawablesRelative(null, null, null, null)
+            if (serviceIconsVisible) {
+                val icon = ContextCompat.getDrawable(this, iconRes)?.mutate()
+                icon?.setBounds(0, 0, dp(34), dp(30))
+                item.setCompoundDrawablesRelative(null, icon, null, null)
+                item.text = ""
+                item.textSize = 10f
+            } else {
+                item.text = abbreviation
+                item.textSize = 15f
+            }
+            item.contentDescription = descriptions[viewId]
+            item.setTextColor(currentPalette().text)
+        }
+    }
 
     private fun setupSettingsButton() {
         val share = findViewById<View>(R.id.share_button)
@@ -661,6 +780,10 @@ class DashboardActivity : BaseActivity() {
         findViewById<TextView>(R.id.instagram_ping).text = "—"
         findViewById<TextView>(R.id.whatsapp_ping).text = "—"
         findViewById<TextView>(R.id.telegram_ping).text = "—"
+        findViewById<TextView>(R.id.youtube_state).text = "—"
+        findViewById<TextView>(R.id.instagram_state).text = "—"
+        findViewById<TextView>(R.id.whatsapp_state).text = "—"
+        findViewById<TextView>(R.id.telegram_state).text = "—"
         serviceLatencies.clear()
         if (::refreshServicesButton.isInitialized) {
             refreshServicesButton.text = "↻ Обновить"
@@ -707,7 +830,11 @@ class DashboardActivity : BaseActivity() {
         serviceLatencies.remove(service.id)
         setServiceCardBackground(service.id, false)
         val pingView = findViewById<TextView>(service.pingViewId)
+        val stateView = findViewById<TextView>(serviceStateViewId(service.id))
         pingView.text = "Проверка…"
+        pingView.contentDescription = "${service.name}: проверка соединения"
+        // During a test show one progress label only; the status row is restored on completion.
+        stateView.visibility = View.GONE
         serviceTestJobs[service.id] = lifecycleScope.launch {
             val latency = withContext(Dispatchers.IO) { ServiceLatencyResolver.resolve(this@DashboardActivity, service) }
             if (activeTunnel?.name == tunnel.name && tunnel.state == Tunnel.State.UP) {
@@ -719,18 +846,31 @@ class DashboardActivity : BaseActivity() {
                     successfulServices.remove(service.id)
                     serviceLatencies.remove(service.id)
                 }
-                pingView.text = latency?.let { "${it} мс" } ?: "Нет связи"
+                pingView.text = latency?.let { "${it} мс" } ?: "—"
+                stateView.text = serviceStatusLabel(latency)
+                stateView.visibility = View.VISIBLE
                 pingView.contentDescription = latency?.let {
-                    val state = when {
-                        it < 300L -> "быстрый отклик"
-                        it <= 1000L -> "нормальный отклик"
-                        else -> "медленный отклик"
-                    }
-                    "${service.name}: $state, $it миллисекунд"
+                    "${service.name}: ${serviceStatusLabel(it)}, $it миллисекунд"
                 } ?: "${service.name}: нет связи"
+                stateView.contentDescription = "${service.name}: ${serviceStatusLabel(latency)}"
                 setServiceCardBackground(service.id, success)
             }
         }
+    }
+
+    private fun serviceStateViewId(serviceId: String): Int = when (serviceId) {
+        "youtube" -> R.id.youtube_state
+        "instagram" -> R.id.instagram_state
+        "whatsapp" -> R.id.whatsapp_state
+        "telegram" -> R.id.telegram_state
+        else -> throw IllegalArgumentException("Unknown service: $serviceId")
+    }
+
+    private fun serviceStatusLabel(latency: Long?): String = when {
+        latency == null -> "Нет связи"
+        latency <= 600L -> "Быстро"
+        latency <= 2000L -> "Хорошо"
+        else -> "Плохо"
     }
 
     private fun runAllServiceTests() {
@@ -794,11 +934,18 @@ class DashboardActivity : BaseActivity() {
         if (tunnel == null) {
             stopEgressDetection()
             stopDiagnostics()
+            stopStatusDotBlink()
             connectionStartedElapsed = null
             stopProfileExpiryRefresh()
             profileExpiry.visibility = View.GONE
             findViewById<View>(R.id.profile_expiry_bar).visibility = View.GONE
-            statusDot.text = "●"
+            statusDot.visibility = View.GONE
+            findViewById<LinearLayout>(R.id.status_header_row).gravity = Gravity.CENTER
+            findViewById<LinearLayout>(R.id.status_text_container).gravity = Gravity.CENTER_HORIZONTAL
+            statusTitle.gravity = Gravity.CENTER
+            statusSubtitle.gravity = Gravity.CENTER
+            findViewById<View>(R.id.profile_meta_group).visibility = View.GONE
+            findViewById<View>(R.id.server_meta_group).visibility = View.GONE
             statusTitle.text = getString(R.string.dashboard_no_profile)
             statusSubtitle.text = "Импортируйте QR-код или .conf"
             findViewById<TextView>(R.id.dashboard_title).text = "—"
@@ -824,6 +971,13 @@ class DashboardActivity : BaseActivity() {
             return
         }
 
+        statusDot.visibility = View.VISIBLE
+        findViewById<LinearLayout>(R.id.status_header_row).gravity = Gravity.CENTER_VERTICAL
+        findViewById<LinearLayout>(R.id.status_text_container).gravity = Gravity.START
+        statusTitle.gravity = Gravity.START
+        statusSubtitle.gravity = Gravity.START
+        findViewById<View>(R.id.profile_meta_group).visibility = View.VISIBLE
+        findViewById<View>(R.id.server_meta_group).visibility = View.VISIBLE
         addProfileButton.visibility = View.GONE
         connectButton.layoutParams = connectButton.layoutParams.apply { height = dp(48) }
         setDiagnosticsVisibility(tunnel.state == Tunnel.State.UP)
@@ -1045,6 +1199,34 @@ class DashboardActivity : BaseActivity() {
         serviceSection.visibility = visibility
         refreshServicesButton.visibility = visibility
         serviceRow1.visibility = visibility
+        if (visible && !trafficCardsAligned) {
+            equalizeTrafficCards()
+        } else if (!visible) {
+            trafficCardsAligned = false
+            if (speedCard.layoutParams.height != ViewGroup.LayoutParams.WRAP_CONTENT) {
+                speedCard.layoutParams = speedCard.layoutParams.apply { height = ViewGroup.LayoutParams.WRAP_CONTENT }
+            }
+            if (trafficCard.layoutParams.height != ViewGroup.LayoutParams.WRAP_CONTENT) {
+                trafficCard.layoutParams = trafficCard.layoutParams.apply { height = ViewGroup.LayoutParams.WRAP_CONTENT }
+            }
+        }
+    }
+
+    private fun equalizeTrafficCards() {
+        trafficCardsRow.post {
+            if (trafficCardsRow.visibility != View.VISIBLE || !::speedCard.isInitialized || !::trafficCard.isInitialized) {
+                return@post
+            }
+            val targetHeight = maxOf(speedCard.measuredHeight, trafficCard.measuredHeight)
+            if (targetHeight <= 0) return@post
+            if (speedCard.layoutParams.height != targetHeight) {
+                speedCard.layoutParams = speedCard.layoutParams.apply { height = targetHeight }
+            }
+            if (trafficCard.layoutParams.height != targetHeight) {
+                trafficCard.layoutParams = trafficCard.layoutParams.apply { height = targetHeight }
+            }
+            trafficCardsAligned = true
+        }
     }
 
     private fun startStatusDotBlink() {
@@ -1507,6 +1689,7 @@ class DashboardActivity : BaseActivity() {
         }
         val card = findViewById<MaterialCardView>(cardId)
         val ping = findViewById<TextView>(pingId)
+        val state = findViewById<TextView>(serviceStateViewId(serviceId))
         val p = currentPalette()
         val latency = serviceLatencies[serviceId]
         val normal = if (lastTheme == AppTheme.LIGHT) {
@@ -1517,23 +1700,24 @@ class DashboardActivity : BaseActivity() {
         val warning = Color.rgb(245, 180, 54)
         val stateColor = when {
             !success || latency == null -> p.outline
-            latency < 300L -> p.positive
-            latency <= 1000L -> normal
+            latency <= 600L -> p.positive
+            latency <= 2000L -> normal
             else -> warning
         }
         val tintedBase = when {
             !success || latency == null -> p.surface2
-            latency < 300L && lastTheme == AppTheme.LIGHT -> Color.rgb(232, 247, 237)
-            latency <= 1000L && lastTheme == AppTheme.LIGHT -> Color.rgb(232, 244, 253)
-            latency > 1000L && lastTheme == AppTheme.LIGHT -> Color.rgb(255, 247, 224)
-            latency > 1000L -> blendColor(p.surface2, warning, 0.16f)
-            latency < 300L -> blendColor(p.surface2, p.positive, 0.10f)
+            latency <= 600L && lastTheme == AppTheme.LIGHT -> Color.rgb(232, 247, 237)
+            latency <= 2000L && lastTheme == AppTheme.LIGHT -> Color.rgb(232, 244, 253)
+            latency > 2000L && lastTheme == AppTheme.LIGHT -> Color.rgb(255, 247, 224)
+            latency > 2000L -> blendColor(p.surface2, warning, 0.16f)
+            latency <= 600L -> blendColor(p.surface2, p.positive, 0.10f)
             else -> blendColor(p.surface2, normal, 0.10f)
         }
         card.setCardBackgroundColor(tintedBase)
         card.strokeWidth = dp(if (success) 2 else 1)
         card.strokeColor = if (success) stateColor else p.outline
         ping.setTextColor(if (success) stateColor else p.secondaryText)
+        state.setTextColor(if (success) stateColor else p.secondaryText)
     }
 
     private fun blendColor(base: Int, overlay: Int, fraction: Float): Int {
@@ -1620,9 +1804,11 @@ class DashboardActivity : BaseActivity() {
             R.id.rx_value, R.id.tx_value, R.id.total_value, R.id.section_traffic,
             R.id.speed_card_title, R.id.download_speed_value, R.id.upload_speed_value)
         textIds.forEach { findViewById<TextView>(it).setTextColor(p.text) }
+        brandLogoBaseDrawable?.setTint(p.text)
+        brandLogoNumbersDrawable?.setTint(WH78_LOGO_ORANGE)
+        findViewById<TextView>(R.id.brand_title).compoundDrawablesRelative.firstOrNull()?.invalidateSelf()
         findViewById<TextView>(R.id.download_speed_value).setTextColor(p.positive)
         findViewById<TextView>(R.id.upload_speed_value).setTextColor(Color.rgb(245, 180, 54))
-        findViewById<TextView>(R.id.brand_build).setTextColor(p.accent)
         val secondaryIds = intArrayOf(R.id.brand_subtitle, R.id.status_subtitle, R.id.rx_label,
             R.id.tx_label, R.id.total_label, R.id.download_speed_label, R.id.upload_speed_label, R.id.history_hint)
         secondaryIds.forEach { findViewById<TextView>(it).setTextColor(p.secondaryText) }
@@ -1782,6 +1968,8 @@ class DashboardActivity : BaseActivity() {
     private fun formatDate(timestamp: Long): String = SimpleDateFormat("d MMMM yyyy", Locale("ru")).format(Date(timestamp))
 
     companion object {
+        private const val SERVICE_ICON_EASTER_EGG_HOLD_MS = 3_000L
+        private val WH78_LOGO_ORANGE = Color.rgb(255, 153, 51)
         private const val TUNNEL_LIST_TAG = "MYVPN_TUNNEL_LIST"
         private const val FEEDBACK_TELEGRAM_URL = "http://t.me/WH78_official_bot"
         private const val GITHUB_URL = "https://github.com/WoOh78/WH78"

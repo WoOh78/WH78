@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Wh78FullPageDialogAnimation">
+        <item name="android:windowEnterAnimation">@anim/wh78_page_enter</item>
+        <item name="android:windowExitAnimation">@anim/wh78_page_exit</item>
+    </style>
+</resources>
