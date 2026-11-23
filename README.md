@@ -15,7 +15,6 @@
 ## Быстрые ссылки
 
 - **[Скачать WH78](https://github.com/WoOh78/WH78/releases/latest)** — APK и описание релиза
-- [Релиз b18](https://github.com/WoOh78/WH78/releases/tag/b18)
 - [Сообщить об ошибке или предложить улучшение](https://github.com/WoOh78/WH78/issues)
 - [Исходный проект AmneziaWG Android](https://github.com/amnezia-vpn/amneziawg-android)
 - [Что такое AmneziaWG](https://docs.amnezia.org/ru/documentation/amnezia-wg/)
