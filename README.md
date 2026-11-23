@@ -3,7 +3,7 @@
   <br>
   <p>
     <a href="https://github.com/WoOh78/WH78/releases/latest"><img alt="Download" src="https://img.shields.io/badge/Скачать-APK-35DDA7?style=for-the-badge&logo=android&logoColor=07120f"></a>
-    <a href="https://github.com/WoOh78/WH78/releases/tag/b18"><img alt="Current release" src="https://img.shields.io/badge/release-b18-6C9BFF?style=for-the-badge&logo=github&logoColor=white"></a>
+    <a href="https://github.com/WoOh78/WH78/releases/tag/b27"><img alt="Current release" src="https://img.shields.io/badge/release-b18-6C9BFF?style=for-the-badge&logo=github&logoColor=white"></a>
     <a href="https://github.com/amnezia-vpn/amneziawg-android"><img alt="Based on AmneziaWG" src="https://img.shields.io/badge/based%20on-AmneziaWG-29323c?style=for-the-badge"></a>
   </p>
   <p><strong>Android-клиент для VPN-подключений на базе AmneziaWG</strong></p>
